@@ -1,10 +1,8 @@
-from gService import gData
-from dataclasses import dataclass
-from typing import Any, Dict, List
+from gService import gDataclass
+from typing import Any
 
 
-@dataclass
-class User(gData):
+class User(gDataclass):
     displayName: str
     kind: str
     me: bool
@@ -13,8 +11,7 @@ class User(gData):
     photoLink: str
 
 
-@dataclass
-class ContentRestriction(gData):
+class ContentRestriction(gDataclass):
     readOnly: bool
     reason: str
     type: str
@@ -23,36 +20,31 @@ class ContentRestriction(gData):
     ownerRestricted: bool
 
 
-@dataclass
-class Label(gData):
-    @dataclass
-    class Field(gData):
+class Label(gDataclass):
+    class Field(gDataclass):
         kind: str
         id: str
         valueType: str
-        dateString: List[str]
-        integer: List[str]
-        selection: List[str]
-        text: List[str]
-        user: List[User]
+        dateString: list[str]
+        integer: list[str]
+        selection: list[str]
+        text: list[str]
+        user: list[User]
 
     id: str
     revisionId: str
     kind: str
-    fields: Dict[str, Field]
+    fields: dict[str, Field]
 
 
-@dataclass
-class Permission(gData):
-    @dataclass
-    class PermissionDetails(gData):
+class Permission(gDataclass):
+    class PermissionDetails(gDataclass):
         permissionType: str
         inheritedFrom: str
         role: str
         inherited: str
 
-    @dataclass
-    class TeamDrivePermissionDetails(gData):
+    class TeamDrivePermissionDetails(gDataclass):
         teamDrivePermissionType: str
         inheritedFrom: str
         role: str
@@ -62,23 +54,21 @@ class Permission(gData):
     displayName: str
     type: str
     kind: str
-    permissionDetails: List[PermissionDetails]
+    permissionDetails: list[PermissionDetails]
     photoLink: str
     emailAddress: str
     role: str
     allowFileDiscovery: bool
     domain: str
     expirationTime: str
-    teamDrivePermissionDetails: List[TeamDrivePermissionDetails]
+    teamDrivePermissionDetails: list[TeamDrivePermissionDetails]
     deleted: bool
     view: str
     pendingOwner: bool
 
 
-@dataclass
-class File(gData):
-    @dataclass
-    class Capabilities(gData):
+class File(gDataclass):
+    class Capabilities(gDataclass):
         canChangeViewersCanCopyContent: bool
         canMoveChildrenOutOfDrive: bool
         canReadDrive: bool
@@ -121,20 +111,16 @@ class File(gData):
         canModifyOwnerContentRestriction: bool
         canRemoveContentRestriction: bool
 
-    @dataclass
-    class ContentHints(gData):
-        @dataclass
-        class Thumbnail(gData):
+    class ContentHints(gDataclass):
+        class Thumbnail(gDataclass):
             image: str
             mimeType: str
 
         indexableText: str
         thumbnail: Thumbnail
 
-    @dataclass
-    class ImageMediaMetadata(gData):
-        @dataclass
-        class Location(gData):
+    class ImageMediaMetadata(gDataclass):
+        class Location(gDataclass):
             latitude: int
             longitude: int
             altitude: int
@@ -161,23 +147,19 @@ class File(gData):
         subjectDistance: int
         lens: str
 
-    @dataclass
-    class LabelInfo(gData):
-        labels: List[Label]
+    class LabelInfo(gDataclass):
+        labels: list[Label]
 
-    @dataclass
-    class LinkShareMetadata(gData):
+    class LinkShareMetadata(gDataclass):
         securityUpdateEligible: bool
         securityUpdateEnabled: bool
 
-    @dataclass
-    class ShortcutDetails(gData):
+    class ShortcutDetails(gDataclass):
         targetId: str
         targetMimeType: str
         targetResourceKey: str
 
-    @dataclass
-    class VideoMediaMetadata(gData):
+    class VideoMediaMetadata(gDataclass):
         width: int
         height: int
         durationMillis: str
@@ -191,22 +173,22 @@ class File(gData):
     writersCanShare: bool
     viewedByMe: bool
     mimeType: str
-    exportLinks: List[str]
-    parents: List[str]
+    exportLinks: list[str]
+    parents: list[str]
     thumbnailLink: str
     iconLink: str
     shared: bool
     lastModifyingUser: User
-    owners: List[User]
+    owners: list[User]
     headRevisionId: str
     sharingUser: User
     webViewLink: str
     webContentLink: str
     size: str
     viewersCanCopyContent: bool
-    permissions: List[Permission]
+    permissions: list[Permission]
     hasThumbnail: bool
-    spaces: List[str]
+    spaces: list[str]
     folderColorRgb: str
     id: str
     name: str
@@ -224,8 +206,8 @@ class File(gData):
     originalFilename: str
     ownedByMe: bool
     fullFileExtension: str
-    properties: Dict[str, Any]
-    appProperties: Dict[str, Any]
+    properties: dict[str, Any]
+    appProperties: dict[str, Any]
     isAppAuthorized: bool
     teamDriveId: str
     capabilities: Capabilities
@@ -234,11 +216,11 @@ class File(gData):
     thumbnailVersion: str
     trashedTime: str
     modifiedByMe: bool
-    permissionIds: List[str]
+    permissionIds: list[str]
     imageMediaMetadata: ImageMediaMetadata
     videoMediaMetadata: VideoMediaMetadata
     shortcutDetails: ShortcutDetails
-    contentRestrictions: List[ContentRestriction]
+    contentRestrictions: list[ContentRestriction]
     resourceKey: str
     linkShareMetadata: LinkShareMetadata
     labelInfo: LabelInfo
@@ -246,16 +228,13 @@ class File(gData):
     sha256Checksum: str
 
 
-@dataclass
-class About(gData):
-    @dataclass
-    class DriveTheme(gData):
+class About(gDataclass):
+    class DriveTheme(gDataclass):
         id: str
         backgroundImageLink: str
         colorRgb: str
 
-    @dataclass
-    class StorageQuota(gData):
+    class StorageQuota(gDataclass):
         limit: str
         usageInDrive: str
         usageInDriveTrash: str
@@ -263,21 +242,20 @@ class About(gData):
 
     kind: str
     storageQuota: StorageQuota
-    driveThemes: List[DriveTheme]
+    driveThemes: list[DriveTheme]
     canCreateDrives: bool
-    importFormats: Dict[str, Any]
-    exportFormats: Dict[str, Any]
+    importFormats: dict[str, Any]
+    exportFormats: dict[str, Any]
     appInstalled: bool
     user: User
-    folderColorPalette: List[str]
-    maxImportSizes: Dict[str, str]
+    folderColorPalette: list[str]
+    maxImportSizes: dict[str, str]
     maxUploadSize: str
-    teamDriveThemes: List[DriveTheme]
+    teamDriveThemes: list[DriveTheme]
     canCreateTeamDrives: bool
 
 
-@dataclass
-class Channel(gData):
+class Channel(gDataclass):
     payload: bool
     id: str
     resourceId: str
@@ -286,21 +264,18 @@ class Channel(gData):
     expiration: str
     type: str
     address: str
-    params: Dict[str, str]
+    params: dict[str, str]
     kind: str
 
 
-@dataclass
-class Drive(gData):
-    @dataclass
-    class BackgroundImageFile(gData):
+class Drive(gDataclass):
+    class BackgroundImageFile(gDataclass):
         id: str
         xCoordinate: int
         yCoordinate: int
         width: int
 
-    @dataclass
-    class Capabilities(gData):
+    class Capabilities(gDataclass):
         canAddChildren: bool
         canComment: bool
         canCopy: bool
@@ -322,8 +297,7 @@ class Drive(gData):
         canDeleteChildren: bool
         canTrashChildren: bool
 
-    @dataclass
-    class Restrictions(gData):
+    class Restrictions(gDataclass):
         copyRequiresWriterPermission: bool
         domainUsersOnly: bool
         driveMembersOnly: bool
@@ -344,10 +318,8 @@ class Drive(gData):
     orgUnitId: str
 
 
-@dataclass
-class TeamDrive(gData):
-    @dataclass
-    class Capabilities(gData):
+class TeamDrive(gDataclass):
+    class Capabilities(gDataclass):
         canAddChildren: bool
         canComment: bool
         canCopy: bool
@@ -382,8 +354,7 @@ class TeamDrive(gData):
     orgUnitId: str
 
 
-@dataclass
-class Change(gData):
+class Change(gDataclass):
     kind: str
     removed: bool
     file: File
@@ -397,13 +368,12 @@ class Change(gData):
     drive: Drive
 
 
-@dataclass
-class Revision(gData):
+class Revision(gDataclass):
     id: str
     mimeType: str
     kind: str
     published: bool
-    exportLinks: Dict[str, str]
+    exportLinks: dict[str, str]
     keepForever: bool
     md5Checksum: str
     modifiedTime: str

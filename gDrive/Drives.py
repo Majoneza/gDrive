@@ -3,14 +3,13 @@ from gService import gSubService
 from gDriveData import Drive, Drives
 from .query import BridgeTerm
 from .utils import executeResourceSelf
-from typing import Any, Dict
 
 
 class gDriveDrives(gSubService):
     def create(
-        self, drive: Drive | Dict[str, Any], requestId: str = str(uuid.uuid4())
+        self, drive: Drive, requestId: str = str(uuid.uuid4())
     ) -> Drive:
-        return executeResourceSelf(body="drive")
+        return executeResourceSelf(self, body="drive")
 
     def delete(
         self,
@@ -18,13 +17,13 @@ class gDriveDrives(gSubService):
         useDomainAdminAccess: bool | None = None,
         allowItemDeletion: bool | None = None,
     ) -> None:
-        return executeResourceSelf(checkError=True)
+        return executeResourceSelf(self, checkError=True)
 
     def get(self, driveId: str, useDomainAdminAccess: bool | None = None) -> Drive:
-        return executeResourceSelf()
+        return executeResourceSelf(self)
 
     def hide(self, driveId: str) -> Drive:
-        return executeResourceSelf()
+        return executeResourceSelf(self)
 
     def list(
         self,
@@ -33,15 +32,15 @@ class gDriveDrives(gSubService):
         q: str | BridgeTerm | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Drives.List:
-        return executeResourceSelf()
+        return executeResourceSelf(self)
 
     def unhide(self, driveId: str) -> Drive:
-        return executeResourceSelf()
+        return executeResourceSelf(self)
 
     def update(
         self,
-        drive: Drive | Dict[str, Any],
+        drive: Drive,
         driveId: str,
         useDomainAdminAccess: bool | None = None,
     ) -> Drive:
-        return executeResourceSelf(body="drive")
+        return executeResourceSelf(self, body="drive")

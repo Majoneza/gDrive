@@ -1,10 +1,8 @@
-from dataclasses import dataclass
-from .base import gData
+from gService import gDataclass
 from gDriveData import Revision
-from typing import List as ListType
 
-@dataclass
-class List(gData):
+
+class List(gDataclass):
     nextPageToken: str
     kind: str
-    revisions: ListType[Revision]
+    revisions: list[Revision]

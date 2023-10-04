@@ -1,55 +1,47 @@
-from dataclasses import dataclass
-from .base import gData, File, Label
-from typing import List as ListType
+from gService import gDataclass
+from .base import File, Label
 
 
-@dataclass
-class List(gData):
+class List(gDataclass):
     nextPageToken: str
     kind: str
     incompleteSearch: bool
-    files: ListType[File]
+    files: list[File]
 
 
-@dataclass
-class GenerateIds(gData):
-    ids: ListType[str]
+class GenerateIds(gDataclass):
+    ids: list[str]
     space: str
     kind: str
 
 
-@dataclass
-class ListLabels(gData):
-    labels: ListType[Label]
+class ListLabels(gDataclass):
+    labels: list[Label]
     nextPageToken: str
     kind: str
 
 
-@dataclass
-class ModifyLabels(gData):
-    modifiedLabels: ListType[Label]
+class ModifyLabels(gDataclass):
+    modifiedLabels: list[Label]
     kind: str
 
 
-@dataclass
-class ModifyLabelsRequest(gData):
-    @dataclass
-    class LabelModification(gData):
-        @dataclass
-        class FieldModification(gData):
+class ModifyLabelsRequest(gDataclass):
+    class LabelModification(gDataclass):
+        class FieldModification(gDataclass):
             fieldId: str
             kind: str
-            setDateValues: ListType[str]
-            setTextValues: ListType[str]
-            setSelectionValues: ListType[str]
-            setIntegerValues: ListType[str]
-            setUserValues: ListType[str]
+            setDateValues: list[str]
+            setTextValues: list[str]
+            setSelectionValues: list[str]
+            setIntegerValues: list[str]
+            setUserValues: list[str]
             unsetValues: bool
 
         labelId: str
-        fieldModifications: ListType[FieldModification]
+        fieldModifications: list[FieldModification]
         removeLabel: bool
         kind: str
 
-    labelModifications: ListType[LabelModification]
+    labelModifications: list[LabelModification]
     kind: str

@@ -10,7 +10,7 @@ from .utils import (
 )
 from googleapiclient.http import MediaDownloadProgress
 from io import BufferedWriter
-from typing import Any, Dict, List, Generator, overload
+from typing import Any, List, Generator, overload
 
 
 class gDriveFiles(gSubService):
@@ -18,7 +18,7 @@ class gDriveFiles(gSubService):
         self,
         fileId: str,
         filePath: str,
-        fileMetadata: File | Dict[str, Any],
+        fileMetadata: File,
         enforceSingleParent: bool | None = None,
         ignoreDefaultVisibility: bool | None = None,
         keepRevisionForever: bool | None = None,
@@ -29,13 +29,13 @@ class gDriveFiles(gSubService):
         resumable: bool = False,
     ) -> File:
         return uploadResourceSelf(
-            "filePath", "resumable", joins=["includeLabels"], body="fileMetadata"
+            self, "filePath", "resumable", joins=["includeLabels"], body="fileMetadata"
         )
 
     def create(
         self,
         filePath: str,
-        fileMetadata: File | Dict[str, Any],
+        fileMetadata: File,
         enforceSingleParent: bool | None = None,
         ignoreDefaultVisibility: bool | None = None,
         keepRevisionForever: bool | None = None,
@@ -47,14 +47,14 @@ class gDriveFiles(gSubService):
         resumable: bool = False,
     ) -> File:
         return uploadResourceSelf(
-            "filePath", "resumable", joins=["includeLabels"], body="fileMetadata"
+            self, "filePath", "resumable", joins=["includeLabels"], body="fileMetadata"
         )
 
     def delete(self, fileId: str, supportsAllDrives: bool | None = None) -> None:
-        return executeResourceSelf(checkError=True)
+        return executeResourceSelf(self, checkError=True)
 
     def emptyTrash(self, driveId: str | None = None) -> None:
-        return executeResourceSelf(checkError=True)
+        return executeResourceSelf(self, checkError=True)
 
     def export(self, fileId: str, fd: BufferedWriter, mimeType: str | None = None):
         return downloadResourceSelf("fd")
@@ -65,7 +65,7 @@ class gDriveFiles(gSubService):
         space: str | None = None,
         type: str | None = None,
     ) -> Files.GenerateIds:
-        return executeResourceSelf()
+        return executeResourceSelf(self)
 
     @overload
     def get(
@@ -101,9 +101,9 @@ class gDriveFiles(gSubService):
         includeLabels: List[str] | None = None,
     ):
         if fd is not None:
-            return downloadResourceSelf('fd', joins=["includeLabels"])
+            return downloadResourceSelf("fd", joins=["includeLabels"])
         else:
-            return executeResourceSelf(joins=["includeLabels"])
+            return executeResourceSelf(self, joins=["includeLabels"])
 
     def list(
         self,
@@ -119,23 +119,23 @@ class gDriveFiles(gSubService):
         includePermissionsForView: str | None = None,
         includeLabels: List[str] | None = None,
     ) -> Files.List:
-        return executeResourceSelf(joins=["orderBy", "spaces", "includeLabels"])
+        return executeResourceSelf(self, joins=["orderBy", "spaces", "includeLabels"])
 
     def listLabels(
         self, fileId: str, maxResults: int | None = None, pageToken: str | None = None
     ) -> Files.ListLabels:
-        return executeResourceSelf()
+        return executeResourceSelf(self)
 
     def modifyLabels(
         self, fileId: str, request: Files.ModifyLabelsRequest
     ) -> Files.ModifyLabels:
-        return executeResourceSelf()
+        return executeResourceSelf(self)
 
     def update(
         self,
         fileId: str,
         filePath: str,
-        fileMetadata: File | Dict[str, Any],
+        fileMetadata: File,
         addParents: List[str] | None = None,
         keepRevisionForever: bool | None = None,
         ocrLanguage: str | None = None,
@@ -147,6 +147,7 @@ class gDriveFiles(gSubService):
         resumable: bool = False,
     ) -> File:
         return uploadResourceSelf(
+            self,
             "filePath",
             "resumable",
             joins=["addParents", "removeParents", "includeLabels"],
@@ -162,7 +163,7 @@ class gDriveFiles(gSubService):
         includePermissionsForView: str | None = None,
         includeLabels: List[str] | None = None,
     ) -> Channel:
-        return executeResourceSelf(joins=["includeLabels"], body="channel")
+        return executeResourceSelf(self, joins=["includeLabels"], body="channel")
 
     def GetPathId(self, path: str) -> str:
         parts = splitPath(path)
@@ -181,17 +182,11 @@ class gDriveFiles(gSubService):
 
     def Delete(
         self,
-        name: str,
+        path: str,
         supportsAllDrives: bool | None = None,
     ) -> None:
-        files = self.list(q=f'name = "{name}"').files
-        if len(files) != 1:
-            raise ValueError(
-                "Found multiple files with given name"
-                if len(files) > 1
-                else "Found no files with given name"
-            )
-        return self.delete(files[0].id, supportsAllDrives)
+        fileId = self.GetPathId(path)
+        return self.delete(fileId, supportsAllDrives)
 
     def Download(
         self,
@@ -212,7 +207,7 @@ class gDriveFiles(gSubService):
 
     def Upload(self, localPath: str, drivePath: str | None = None):
         if drivePath is None:
-            file_metadata = {"name": os.path.basename(localPath)}
+            file_metadata = File(name=os.path.basename(localPath))
         else:
             try:
                 folderId = self.GetPathId(os.path.dirname(drivePath))
@@ -220,5 +215,5 @@ class gDriveFiles(gSubService):
             except ValueError:
                 folderId = self.GetPathId(drivePath)
                 name = os.path.basename(localPath)
-            file_metadata = {"name": name, "parents": [folderId]}
+            file_metadata = File(name=name, parents=[folderId])
         return self.create(localPath, file_metadata)

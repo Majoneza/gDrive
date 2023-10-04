@@ -1,17 +1,14 @@
-from dataclasses import dataclass
-from .base import Change, gData
-from typing import List as ListType
+from gService import gDataclass
+from .base import Change
 
 
-@dataclass
-class GetStartPageToken(gData):
+class GetStartPageToken(gDataclass):
     startPageToken: str
     kind: str
 
 
-@dataclass
-class List(gData):
+class List(gDataclass):
     kind: str
     nextPageToken: str
     newStartPageToken: str
-    changes: ListType[Change]
+    changes: list[Change]

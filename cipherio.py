@@ -6,7 +6,7 @@ import random
 import os
 from io import BytesIO, TextIOWrapper, SEEK_END
 from string import ascii_letters, digits
-from typing import BinaryIO, Literal, overload
+from typing import BinaryIO, Literal
 from types import TracebackType
 
 

@@ -1,13 +1,12 @@
 from gService import gSubService
 from gDriveData import Permission, Permissions
 from .utils import executeResourceSelf
-from typing import Any, Dict
 
 
 class gDrivePermissions(gSubService):
     def create(
         self,
-        permission: Permission | Dict[str, Any],
+        permission: Permission,
         fileId: str,
         emailMessage: str | None = None,
         moveToNewOwnersRoot: bool | None = None,
@@ -16,7 +15,7 @@ class gDrivePermissions(gSubService):
         transferOwnership: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Permission:
-        return executeResourceSelf(body="permission")
+        return executeResourceSelf(self, body="permission")
 
     def delete(
         self,
@@ -25,7 +24,7 @@ class gDrivePermissions(gSubService):
         supportsAllDrives: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> None:
-        return executeResourceSelf(checkError=True)
+        return executeResourceSelf(self, checkError=True)
 
     def get(
         self,
@@ -34,7 +33,7 @@ class gDrivePermissions(gSubService):
         supportsAllDrives: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Permission:
-        return executeResourceSelf()
+        return executeResourceSelf(self)
 
     def list(
         self,
@@ -45,11 +44,11 @@ class gDrivePermissions(gSubService):
         useDomainAdminAccess: bool | None = None,
         includePermissionsForView: str | None = None,
     ) -> Permissions.List:
-        return executeResourceSelf()
+        return executeResourceSelf(self)
 
     def update(
         self,
-        permission: Permission | Dict[str, Any],
+        permission: Permission,
         fileId: str,
         permissionId: str,
         removeExpiration: bool | None = None,
@@ -57,4 +56,4 @@ class gDrivePermissions(gSubService):
         transferOwnership: bool | None = None,
         useDomainAdminAccess: bool | None = None
     ) -> Permission:
-        return executeResourceSelf(body="permission")
+        return executeResourceSelf(self, body="permission")
