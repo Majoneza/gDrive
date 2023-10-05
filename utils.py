@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Iterable, Optional, TypeVar, Type
 T = TypeVar("T")
 
 
-def splitPath(path: str):
+def splitPath(path: str) -> list[str]:
     return os.path.normpath(path).split(os.sep)
 
 
@@ -13,13 +13,13 @@ class Object(object):
     pass
 
 
-def list2object(instance: List[Any], obj: Type[Any] = Object) -> List[Any]:
+def dictsIterable2objectList(instance: Iterable[Any], obj: Type[Any] = Object) -> List[Any]:
     result: List[Any] = []
     for v in instance:
         if type(v) is dict:
             v = dict2object(v, obj)
-        elif type(v) is list:
-            v = list2object(v, obj)
+        elif type(v) is list or type(v) is tuple:
+            v = dictsIterable2objectList(v, obj)
         result.append(v)
     return result
 
@@ -29,9 +29,32 @@ def dict2object(instance: Dict[Any, Any], obj: Type[T] = Object) -> T:
     for k, v in instance.items():
         if type(v) is dict:
             v = dict2object(v, obj)
-        elif type(v) is list:
-            v = list2object(v, obj)
+        elif type(v) is list or type(v) is tuple:
+            v = dictsIterable2objectList(v, obj)
         setattr(result, k, v)
+    return result
+
+
+def objectsIterable2dictsList(lst: Iterable[object], base: Type[Any] = Object) -> List[Any]:
+    result: list[Any] = []
+    for v in lst:
+        if type(v).__base__ is base:
+            v = object2dict(v, base)
+        elif type(v) is list or type(v) is tuple:
+            v = objectsIterable2dictsList(v, base)
+        result.append(v)
+    return result
+
+
+def object2dict(obj: object, base: Type[Any] = Object) -> dict[Any, Any]:
+    result: dict[Any, Any] = {}
+    for k, v in obj.__dict__.items():
+        v: object
+        if type(v).__base__ is base:
+            v = object2dict(v, base)
+        elif type(v) is list or type(v) is tuple:
+            v = objectsIterable2dictsList(v, base)
+        result[k] = v
     return result
 
 
@@ -45,7 +68,7 @@ def getFunctionVariablesFast(
     }
 
 
-def getFunctionName(depth: int = 1):
+def getFunctionName(depth: int = 1) -> str:
     return inspect.stack()[depth].function
 
 
@@ -117,9 +140,20 @@ def first(it: Iterable[T]) -> T:
     return next(iter(it))
 
 
-K = TypeVar("K")
-V = TypeVar("V")
-
-
-def mergeDicts(dicts: Iterable[dict[K, V]]) -> dict[K, V]:
-    return first(dicts)
+def mergeDicts(dicts: Iterable[dict[Any, Any]]) -> dict[Any, Any]:
+    result: dict[Any, Any] = {}
+    for d in dicts:
+        for k, v in d.items():
+            if type(v) is dict:
+                if k not in result:
+                    result[k] = []
+                result[k].append(v)
+            else:
+                if k in result:
+                    raise RuntimeError(f"Unable to merge dicts, failed on key: {k}")
+                result[k] = v
+    for k, v in result.items():
+        if type(v) is list:
+            v: list[Any]
+            result[k] = mergeDicts(v)
+    return result

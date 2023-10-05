@@ -1,4 +1,4 @@
-from gService import gDataclass
+from gService import gDataclass, gList
 from .base import Change
 
 
@@ -11,4 +11,4 @@ class List(gDataclass):
     kind: str
     nextPageToken: str
     newStartPageToken: str
-    changes: list[Change]
+    changes: gList[Change]

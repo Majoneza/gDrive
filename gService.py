@@ -3,7 +3,7 @@ from itertools import chain, count
 from googleapiclient.discovery import build, Resource
 from abc import ABCMeta, abstractmethod
 from utils import mergeDicts
-from typing import Any, Generic, Self, Tuple, TypeVar, Type, Union
+from typing import Any, Generic, Iterable, Self, Tuple, TypeVar, Type, Union
 from types import TracebackType
 
 
@@ -26,19 +26,29 @@ class gFields:
         raise NotImplementedError()
 
 
+class gList(gFields, Generic[T]):
+    def __len__(self) -> int:
+        raise NotImplementedError()
+
+    def __getitem__(self, index: int) -> T:
+        raise NotImplementedError()
+
+
 FieldDictStr = dict[str, Union["FieldDictStr", None]]
 FieldsDict = dict[str, Union["FieldsDict", None]] | dict[int, "FieldsDict"]
 
 
-class gBaseData(Generic[T], gFields, metaclass=ABCMeta):
-    def __init__(self, variableName: str, variableClass: Type[T]):
+class gBaseData(Generic[T], metaclass=ABCMeta):
+    def __init__(self, variableName: str, variableClass: Type[T]) -> None:
         self._variableName = variableName
         self._variableClass = variableClass
         self._setupVariables()
 
-    def _setupVariables(self):
+    def _setupVariables(self) -> None:
         for k, v in self._getVariableItemTypes().items():
-            if hasattr(v, "__origin__") and v.__origin__ is list:
+            if hasattr(v, "__origin__") and (
+                v.__origin__ is list or v.__origin__ is gList
+            ):
                 typeArg = v.__args__[0]
                 if typeArg.__base__ is not self._variableClass.__base__:
                     continue
@@ -60,21 +70,29 @@ class gBaseData(Generic[T], gFields, metaclass=ABCMeta):
     def _getAttributeUnchecked(self, name: str) -> Any:
         return self.__dict__[name]
 
-    def _getAttributeWrapper(self, name: str) -> Union["gBaseData[T]", None]:
+    def _getAttributeWrapperSafe(self, name: str) -> Union["gBaseData[T]", None]:
         if name in self.__dict__:
             variable = self.__dict__[name]
             if type(variable) is gObjectData or type(variable) is gListData:
                 return variable
         return None
 
-    def getFieldNames(self) -> FieldDictStr:
+    def _getMissingFields(self, fields: Iterable[Any]) -> list[Any]:
+        for field in fields:
+            if not self._hasVariableAttribute(field):
+                raise ValueError(f"Invalid field name: {field}")
+        return [field for field in fields if not self._hasAttributeUnchecked(field)]
+
+    def getFieldNames(self, fields: Iterable[str] | None = None) -> FieldDictStr:
         result: FieldDictStr = {}
-        for k in self._getVariableItemTypes():
-            variable = self._getAttributeWrapper(k)
+        if fields is None:
+            fields = self._getVariableItemTypes().keys()
+        for field in fields:
+            variable = self._getAttributeWrapperSafe(field)
             if variable is not None:
-                result[k] = variable.getFieldNames()
+                result[field] = variable.getFieldNames()
                 continue
-            result[k] = None
+            result[field] = None
         return result
 
     @abstractmethod
@@ -86,7 +104,7 @@ class gBaseData(Generic[T], gFields, metaclass=ABCMeta):
         ...
 
 
-class gBaseObjectData(Generic[T], gBaseData[T], metaclass=ABCMeta):
+class gBaseObjectData(Generic[T], gBaseData[T], gFields, metaclass=ABCMeta):
     def __getattr__(self, name: str) -> Any:
         if not self._hasVariableAttribute(name):
             raise AttributeError()
@@ -103,26 +121,23 @@ class gBaseObjectData(Generic[T], gBaseData[T], metaclass=ABCMeta):
         k: Any
         v: Any
         for k, v in data.items():
-            variable = self._getAttributeWrapper(k)
+            variable = self._getAttributeWrapperSafe(k)
             if variable is not None:
                 variable.setData(v)
                 continue
             setattr(self, k, v)
 
     def getFields(self, *fields: Any) -> Self:
-        for field in fields:
-            if not self._hasVariableAttribute(field):
-                raise ValueError(f"Invalid field name: {field}")
-        self.getFieldsDict(
-            {k: v for k, v in self.getFieldNames().items() if k in fields}
-        )
+        missingFields = self._getMissingFields(fields)
+        if len(missingFields) != 0:
+            self.getFieldsDict(self.getFieldNames(missingFields))
         return self
 
 
 class gObjectData(Generic[T], gBaseObjectData[T]):
     def __init__(
         self, variableName: str, variableClass: Type[T], previous: gBaseData[Any]
-    ):
+    ) -> None:
         super().__init__(variableName, variableClass)
         self._previous = previous
 
@@ -137,7 +152,7 @@ class gListItemData(Generic[T], gBaseObjectData[T]):
         variableClass: Type[T],
         previous: "gListData[Any]",
         index: int,
-    ):
+    ) -> None:
         super().__init__(variableName, variableClass)
         self._previous = previous
         self._index = index
@@ -146,8 +161,10 @@ class gListItemData(Generic[T], gBaseObjectData[T]):
         self._previous.getFieldsDict({self._index: fields})
 
 
-class gListData(Generic[T], gBaseData[T]):
-    def __init__(self, itemName: str, itemClass: Type[T], previous: gBaseData[Any]):
+class gListData(Generic[T], gBaseData[T], gList[gListItemData[T]]):
+    def __init__(
+        self, itemName: str, itemClass: Type[T], previous: gBaseData[Any]
+    ) -> None:
         super().__init__(itemName, itemClass)
         self._items: dict[int, gListItemData[T]] = {}
         self._previous = previous
@@ -162,8 +179,7 @@ class gListData(Generic[T], gBaseData[T]):
 
     def __len__(self) -> int:
         if not self._hasData:
-            # FIXME: Field selection produces error
-            self.getFieldsDict({})
+            self.getFieldsDict(None)
         return len(self._items)
 
     def __getitem__(self, index: int) -> gListItemData[T]:
@@ -184,6 +200,12 @@ class gListData(Generic[T], gBaseData[T]):
     def getFieldsDict(self, fields: FieldsDict) -> None:
         self._previous.getFieldsDict({self._variableName: fields})
 
+    def getFields(self, *fields: Any) -> Self:
+        missingFields = self._getMissingFields(fields)
+        if len(missingFields) != 0:
+            self.getFieldsDict({-1: self.getFieldNames(missingFields)})
+        return self
+
 
 class gData(Generic[T], gBaseObjectData[T]):
     def __init__(
@@ -191,15 +213,16 @@ class gData(Generic[T], gBaseObjectData[T]):
         variableClass: Type[T],
         resource: gResource,
         kwargs: dict[str, Any] = {},
+        onlyExecuteOnce: bool = False,
     ) -> None:
         super().__init__(variableClass.__name__, variableClass)
         self._resource = resource
         self._kwargs = kwargs
+        self._onlyExecuteOnce = onlyExecuteOnce
+        self._executed = False
 
     @staticmethod
     def _convertFieldsToGoogleFormat(fields: FieldsDict) -> Any:
-        if len(fields) == 0:
-            return None
         if all(type(k) is int for k in fields):
             merged = mergeDicts(fields.values())
             return __class__._convertFieldsToGoogleFormat(merged)
@@ -212,20 +235,35 @@ class gData(Generic[T], gBaseObjectData[T]):
                 fieldsFormat.append(f"{k}({value})")
         return ",".join(fieldsFormat)
 
+    def _execute(self, fields: str) -> None:
+        if self._onlyExecuteOnce and self._executed:
+            raise RuntimeError("This resource cannot be called twice")
+        self._executed = True
+        data = self._resource(**self._kwargs, fields=fields).execute()
+        self.setData(data)
+
     def getFieldsDict(self, fields: FieldsDict) -> None:
         print("... Fetching resources ...")
         googleFields = self._convertFieldsToGoogleFormat(fields)
-        data = self._resource(**self._kwargs, fields=googleFields).execute()
-        self.setData(data)
+        self._execute(googleFields)
+
+    def execute(self) -> None:
+        self._execute("")
+
+
+def executeGDataResource(obj: Any) -> None:
+    if type(obj) is not gData:
+        raise TypeError(f"Invalid given type: {type(obj).__name__}, is it top level?")
+    obj.execute()
 
 
 class gDataclassMetaclass(type):
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> str:
         return name
 
 
 class gDataclass(gFields, metaclass=gDataclassMetaclass):
-    def __init__(self, *args: Tuple[Any, Any], **kwargs: Any):
+    def __init__(self, *args: Tuple[Any, Any], **kwargs: Any) -> None:
         super().__init__()
         for k, v in chain(args, kwargs.items()):
             if k not in self.__annotations__:
@@ -238,19 +276,21 @@ class gDataclass(gFields, metaclass=gDataclassMetaclass):
 class gSubService:
     _resource: gResource
 
-    def __init__(self, resource: gResource):
+    def __init__(self, resource: gResource) -> None:
         self._resource = resource
 
 
 class gService:
     _service: gResource
 
-    def __init__(self, credentials: gCredentials, serviceName: str, version: str):
+    def __init__(
+        self, credentials: gCredentials, serviceName: str, version: str
+    ) -> None:
         if not credentials.update():
             raise ValueError("Unable to acquire credentials")
         self._service = build(serviceName, version, credentials=credentials.get())
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self._service.__enter__()
         return self
 
@@ -259,8 +299,8 @@ class gService:
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ):
+    ) -> None:
         self._service.__exit__(exc_type, exc_val, exc_tb)
 
-    def close(self):
+    def close(self) -> None:
         self._service.close()

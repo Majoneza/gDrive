@@ -1,4 +1,4 @@
-from gService import gDataclass
+from gService import gDataclass, gList
 from typing import Any
 
 
@@ -29,7 +29,7 @@ class Label(gDataclass):
         integer: list[str]
         selection: list[str]
         text: list[str]
-        user: list[User]
+        user: gList[User]
 
     id: str
     revisionId: str
@@ -54,14 +54,14 @@ class Permission(gDataclass):
     displayName: str
     type: str
     kind: str
-    permissionDetails: list[PermissionDetails]
+    permissionDetails: gList[PermissionDetails]
     photoLink: str
     emailAddress: str
     role: str
     allowFileDiscovery: bool
     domain: str
     expirationTime: str
-    teamDrivePermissionDetails: list[TeamDrivePermissionDetails]
+    teamDrivePermissionDetails: gList[TeamDrivePermissionDetails]
     deleted: bool
     view: str
     pendingOwner: bool
@@ -148,7 +148,7 @@ class File(gDataclass):
         lens: str
 
     class LabelInfo(gDataclass):
-        labels: list[Label]
+        labels: gList[Label]
 
     class LinkShareMetadata(gDataclass):
         securityUpdateEligible: bool
@@ -179,14 +179,14 @@ class File(gDataclass):
     iconLink: str
     shared: bool
     lastModifyingUser: User
-    owners: list[User]
+    owners: gList[User]
     headRevisionId: str
     sharingUser: User
     webViewLink: str
     webContentLink: str
     size: str
     viewersCanCopyContent: bool
-    permissions: list[Permission]
+    permissions: gList[Permission]
     hasThumbnail: bool
     spaces: list[str]
     folderColorRgb: str
@@ -220,7 +220,7 @@ class File(gDataclass):
     imageMediaMetadata: ImageMediaMetadata
     videoMediaMetadata: VideoMediaMetadata
     shortcutDetails: ShortcutDetails
-    contentRestrictions: list[ContentRestriction]
+    contentRestrictions: gList[ContentRestriction]
     resourceKey: str
     linkShareMetadata: LinkShareMetadata
     labelInfo: LabelInfo
@@ -242,7 +242,7 @@ class About(gDataclass):
 
     kind: str
     storageQuota: StorageQuota
-    driveThemes: list[DriveTheme]
+    driveThemes: gList[DriveTheme]
     canCreateDrives: bool
     importFormats: dict[str, Any]
     exportFormats: dict[str, Any]
@@ -251,7 +251,7 @@ class About(gDataclass):
     folderColorPalette: list[str]
     maxImportSizes: dict[str, str]
     maxUploadSize: str
-    teamDriveThemes: list[DriveTheme]
+    teamDriveThemes: gList[DriveTheme]
     canCreateTeamDrives: bool
 
 

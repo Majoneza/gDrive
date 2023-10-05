@@ -1,16 +1,22 @@
-from gService import gResource, gData
-from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
+from gService import gResource, gData, gDataclass
+from googleapiclient.http import (
+    MediaIoBaseDownload,
+    MediaFileUpload,
+    MediaDownloadProgress,
+)
 from io import BufferedWriter
 from utils import (
-    removeNones,
+    object2dict,
     getFunctionName,
     getFunctionVariables,
     getFunctionReturnType,
 )
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Generator
 
 
-def downloadMedia(fd: BufferedWriter, request: gResource):
+def downloadMedia(
+    fd: BufferedWriter, request: gResource
+) -> Generator[MediaDownloadProgress, Any, None]:
     downloader = MediaIoBaseDownload(fd, request)
     done = False
     while done is False:
@@ -23,24 +29,21 @@ def moveToKwargsBody(kwargs: Dict[str, Any], name: str):
     del kwargs[name]
 
 
-def joinKwargs(kwargs: dict[str, Any], variables: Iterable[str]):
-    for v in variables:
-        if v in kwargs:
-            kwargs[v] = ",".join(kwargs[v])
-
-
-def removeNonesKwargs(kwargs: dict[str, Any], name: str):
-    kwargs[name] = removeNones(kwargs[name])
+def convertKwargs(kwargs: dict[str, Any]):
+    for k, v in kwargs.items():
+        if type(v).__base__ is gDataclass:
+            kwargs[k] = object2dict(v, gDataclass)
+        elif type(v) is list:
+            kwargs[k] = ",".join(v)
 
 
 def prepareResourceSelf(
     functionName: str,
     kwargs: dict[str, Any],
-    joins: Iterable[str] = [],
     body: str | None = None,
     resourceVariableName: str = "_resource",
 ) -> tuple[gResource, dict[str, Any]]:
-    joinKwargs(kwargs, joins)
+    convertKwargs(kwargs)
     if body is not None:
         moveToKwargsBody(kwargs, body)
     resource = getattr(kwargs["self"], resourceVariableName)
@@ -50,31 +53,28 @@ def prepareResourceSelf(
 
 def executeResourceSelf(
     module: object,
-    joins: Iterable[str] = [],
     body: str | None = None,
     resourceVariableName: str = "_resource",
     checkError: bool = False,
+    onlyExecuteOnce: bool = False,
     depth: int = 1,
 ) -> Any:
     variableClass = getFunctionReturnType(module, depth + 1)
     name = getFunctionName(depth + 1)
     kwargs = getFunctionVariables(depth + 1)
-    resource, kwargs = prepareResourceSelf(
-        name, kwargs, joins, body, resourceVariableName
-    )
+    resource, kwargs = prepareResourceSelf(name, kwargs, body, resourceVariableName)
     if checkError:
         data = resource(**kwargs).execute()
         if len(data) != 0:
             raise Exception(data)
     else:
-        return gData(variableClass, resource, kwargs)
+        return gData(variableClass, resource, kwargs, onlyExecuteOnce)
 
 
 def uploadResourceSelf(
     module: object,
     filePathKey: str,
     resumableKey: str,
-    joins: Iterable[str] = [],
     body: str | None = None,
     resourceVariableName: str = "_resource",
     depth: int = 1,
@@ -88,15 +88,12 @@ def uploadResourceSelf(
     del kwargs[resumableKey]
     media = MediaFileUpload(filePath, resumable=resumable)
     kwargs["media_body"] = media
-    resource, kwargs = prepareResourceSelf(
-        name, kwargs, joins, body, resourceVariableName
-    )
-    return gData(variableClass, resource, kwargs)
+    resource, kwargs = prepareResourceSelf(name, kwargs, body, resourceVariableName)
+    return gData(variableClass, resource, kwargs, onlyExecuteOnce=True)
 
 
 def downloadResourceSelf(
     fdKey: str,
-    joins: Iterable[str] = [],
     body: str | None = None,
     resourceVariableName: str = "_resource",
     depth: int = 1,
@@ -106,6 +103,6 @@ def downloadResourceSelf(
     fd: BufferedWriter = kwargs[fdKey]
     del kwargs[fdKey]
     resource, kwargs = prepareResourceSelf(
-        f"{name}_media", kwargs, joins, body, resourceVariableName
+        f"{name}_media", kwargs, body, resourceVariableName
     )
     return downloadMedia(fd, resource(**kwargs))

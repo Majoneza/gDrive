@@ -1,8 +1,8 @@
-from gService import gDataclass
+from gService import gDataclass, gList
 from gDriveData import Permission
 
 
 class List(gDataclass):
     nextPageToken: str
     kind: str
-    permissions: list[Permission]
+    permissions: gList[Permission]

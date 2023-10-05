@@ -28,9 +28,7 @@ class gDriveFiles(gSubService):
         includeLabels: List[str] | None = None,
         resumable: bool = False,
     ) -> File:
-        return uploadResourceSelf(
-            self, "filePath", "resumable", joins=["includeLabels"], body="fileMetadata"
-        )
+        return uploadResourceSelf(self, "filePath", "resumable", body="fileMetadata")
 
     def create(
         self,
@@ -46,15 +44,13 @@ class gDriveFiles(gSubService):
         includeLabels: List[str] | None = None,
         resumable: bool = False,
     ) -> File:
-        return uploadResourceSelf(
-            self, "filePath", "resumable", joins=["includeLabels"], body="fileMetadata"
-        )
+        return uploadResourceSelf(self, "filePath", "resumable", body="fileMetadata")
 
     def delete(self, fileId: str, supportsAllDrives: bool | None = None) -> None:
-        return executeResourceSelf(self, checkError=True)
+        return executeResourceSelf(self, checkError=True, onlyExecuteOnce=True)
 
     def emptyTrash(self, driveId: str | None = None) -> None:
-        return executeResourceSelf(self, checkError=True)
+        return executeResourceSelf(self, checkError=True, onlyExecuteOnce=True)
 
     def export(self, fileId: str, fd: BufferedWriter, mimeType: str | None = None):
         return downloadResourceSelf("fd")
@@ -65,7 +61,7 @@ class gDriveFiles(gSubService):
         space: str | None = None,
         type: str | None = None,
     ) -> Files.GenerateIds:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, onlyExecuteOnce=True)
 
     @overload
     def get(
@@ -101,9 +97,9 @@ class gDriveFiles(gSubService):
         includeLabels: List[str] | None = None,
     ):
         if fd is not None:
-            return downloadResourceSelf("fd", joins=["includeLabels"])
+            return downloadResourceSelf("fd")
         else:
-            return executeResourceSelf(self, joins=["includeLabels"])
+            return executeResourceSelf(self)
 
     def list(
         self,
@@ -119,7 +115,7 @@ class gDriveFiles(gSubService):
         includePermissionsForView: str | None = None,
         includeLabels: List[str] | None = None,
     ) -> Files.List:
-        return executeResourceSelf(self, joins=["orderBy", "spaces", "includeLabels"])
+        return executeResourceSelf(self)
 
     def listLabels(
         self, fileId: str, maxResults: int | None = None, pageToken: str | None = None
@@ -129,7 +125,7 @@ class gDriveFiles(gSubService):
     def modifyLabels(
         self, fileId: str, request: Files.ModifyLabelsRequest
     ) -> Files.ModifyLabels:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, onlyExecuteOnce=True)
 
     def update(
         self,
@@ -150,7 +146,6 @@ class gDriveFiles(gSubService):
             self,
             "filePath",
             "resumable",
-            joins=["addParents", "removeParents", "includeLabels"],
             body="fileMetadata",
         )
 
@@ -163,7 +158,7 @@ class gDriveFiles(gSubService):
         includePermissionsForView: str | None = None,
         includeLabels: List[str] | None = None,
     ) -> Channel:
-        return executeResourceSelf(self, joins=["includeLabels"], body="channel")
+        return executeResourceSelf(self, body="channel", onlyExecuteOnce=True)
 
     def GetPathId(self, path: str) -> str:
         parts = splitPath(path)

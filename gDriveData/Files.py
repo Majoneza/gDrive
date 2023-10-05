@@ -1,4 +1,4 @@
-from gService import gDataclass
+from gService import gDataclass, gList
 from .base import File, Label
 
 
@@ -6,7 +6,7 @@ class List(gDataclass):
     nextPageToken: str
     kind: str
     incompleteSearch: bool
-    files: list[File]
+    files: gList[File]
 
 
 class GenerateIds(gDataclass):
@@ -16,13 +16,13 @@ class GenerateIds(gDataclass):
 
 
 class ListLabels(gDataclass):
-    labels: list[Label]
+    labels: gList[Label]
     nextPageToken: str
     kind: str
 
 
 class ModifyLabels(gDataclass):
-    modifiedLabels: list[Label]
+    modifiedLabels: gList[Label]
     kind: str
 
 
@@ -39,9 +39,9 @@ class ModifyLabelsRequest(gDataclass):
             unsetValues: bool
 
         labelId: str
-        fieldModifications: list[FieldModification]
+        fieldModifications: gList[FieldModification]
         removeLabel: bool
         kind: str
 
-    labelModifications: list[LabelModification]
+    labelModifications: gList[LabelModification]
     kind: str

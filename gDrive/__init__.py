@@ -1,4 +1,4 @@
-from gService import gCredentials, gService
+from gService import gCredentials, gService, executeGDataResource
 from .About import gDriveAbout
 from .Changes import gDriveChanges
 from .Channels import gDriveChannels
@@ -6,7 +6,12 @@ from .Drives import gDriveDrives
 from .Files import gDriveFiles
 from .Permissions import gDrivePermissions
 from .Revisions import gDriveRevisions
-from .query import FileQueryTerm as fq, SharedDriveQueryTerm as sdq
+from .query import FileQueryTerm, SharedDriveQueryTerm
+
+
+fq = FileQueryTerm
+sdq = SharedDriveQueryTerm
+execute = executeGDataResource
 
 
 class Scopes:
