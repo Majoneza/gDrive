@@ -1,6 +1,6 @@
 from gService import gResource
 from itertools import chain, count
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from utils import mergeDicts
 from typing import (
     Any,
@@ -17,15 +17,14 @@ from typing import (
 )
 
 
-class gDataclassMetaclass(ABCMeta):
+class gDataclassMetaclass(type):
     def __getattr__(self, name: str) -> str:
         return name
 
 
 class gDataclass(metaclass=gDataclassMetaclass):
-    @abstractmethod
     def getFields(self, *fields: Any) -> Self:
-        ...
+        raise NotImplementedError()
 
     def __init__(self, *args: Tuple[Any, Any], **kwargs: Any) -> None:
         super().__init__()
@@ -42,7 +41,7 @@ K = TypeVar("K", str, int)
 V = TypeVar("V", bound=gDataclass)
 
 
-class gList(gDataclass, Generic[T], metaclass=ABCMeta):
+class gList(gDataclass, Generic[T]):
     @abstractmethod
     def __contains__(self, obj: object) -> bool:
         ...
@@ -56,7 +55,7 @@ class gList(gDataclass, Generic[T], metaclass=ABCMeta):
         ...
 
 
-class gDict(gDataclass, Generic[K, V], metaclass=ABCMeta):
+class gDict(gDataclass, Generic[K, V]):
     @abstractmethod
     def __contains__(self, key: object) -> bool:
         ...
@@ -92,7 +91,7 @@ FieldDictNone = dict[None, "FieldsDict"]
 FieldsDict = FieldDictStr | FieldDictInt | FieldDictNone
 
 
-class gBaseData(Generic[T], metaclass=ABCMeta):
+class gBaseData(Generic[T]):
     @abstractmethod
     def setData(self, data: Any) -> None:
         ...
@@ -170,7 +169,7 @@ class gBaseData(Generic[T], metaclass=ABCMeta):
         return result
 
 
-class gBaseObjectData(Generic[T], gBaseData[T], gDataclass, metaclass=ABCMeta):
+class gBaseObjectData(Generic[T], gBaseData[T], gDataclass):
     def __getattr__(self, name: str) -> Any:
         if not self._hasVariableAttribute(name):
             raise AttributeError()
@@ -227,9 +226,7 @@ class gDictItemData(Generic[K, V], gBaseObjectData[V]):
         self._previous.getFieldsDict(cast(FieldsDict, {self._key: fields}))
 
 
-class gBaseDictData(
-    Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]], metaclass=ABCMeta
-):
+class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
     @abstractmethod
     def _setData(self, data: Any) -> None:
         ...
