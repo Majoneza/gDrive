@@ -7,7 +7,7 @@ from .utils import executeResourceSelf
 
 class gDriveDrives(gSubService):
     def create(self, drive: Drive, requestId: str = str(uuid.uuid4())) -> Drive:
-        return executeResourceSelf(self, body="drive", onlyExecuteOnce=True)
+        return executeResourceSelf(self, "executeOnlyOnce", body="drive")
 
     def delete(
         self,
@@ -15,13 +15,13 @@ class gDriveDrives(gSubService):
         useDomainAdminAccess: bool | None = None,
         allowItemDeletion: bool | None = None,
     ) -> None:
-        return executeResourceSelf(self, checkError=True, onlyExecuteOnce=True)
+        return executeResourceSelf(self, "checkForErrors")
 
     def get(self, driveId: str, useDomainAdminAccess: bool | None = None) -> Drive:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, "execute")
 
     def hide(self, driveId: str) -> Drive:
-        return executeResourceSelf(self, onlyExecuteOnce=True)
+        return executeResourceSelf(self, "executeOnlyOnce")
 
     def list(
         self,
@@ -30,10 +30,10 @@ class gDriveDrives(gSubService):
         q: str | BridgeTerm | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Drives.List:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, "execute")
 
     def unhide(self, driveId: str) -> Drive:
-        return executeResourceSelf(self, onlyExecuteOnce=True)
+        return executeResourceSelf(self, "executeOnlyOnce")
 
     def update(
         self,
@@ -41,4 +41,4 @@ class gDriveDrives(gSubService):
         driveId: str,
         useDomainAdminAccess: bool | None = None,
     ) -> Drive:
-        return executeResourceSelf(self, body="drive", onlyExecuteOnce=True)
+        return executeResourceSelf(self, "executeOnlyOnce", body="drive")

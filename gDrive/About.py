@@ -5,4 +5,4 @@ from .utils import executeResourceSelf
 
 class gDriveAbout(gSubService):
     def get(self) -> About:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, "execute")

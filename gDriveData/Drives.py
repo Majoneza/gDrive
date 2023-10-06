@@ -1,4 +1,4 @@
-from gService import gDataclass, gList
+from gData import gDataclass, gList
 from gDriveData import Drive
 
 

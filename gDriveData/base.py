@@ -1,4 +1,4 @@
-from gService import gDataclass, gList
+from gData import gDataclass, gList
 from typing import Any
 
 
@@ -35,6 +35,33 @@ class Label(gDataclass):
     revisionId: str
     kind: str
     fields: dict[str, Field]
+
+
+class About(gDataclass):
+    class DriveTheme(gDataclass):
+        id: str
+        backgroundImageLink: str
+        colorRgb: str
+
+    class StorageQuota(gDataclass):
+        limit: str
+        usageInDrive: str
+        usageInDriveTrash: str
+        usage: str
+
+    kind: str
+    storageQuota: StorageQuota
+    driveThemes: gList[DriveTheme]
+    canCreateDrives: bool
+    importFormats: dict[str, Any]
+    exportFormats: dict[str, Any]
+    appInstalled: bool
+    user: User
+    folderColorPalette: list[str]
+    maxImportSizes: dict[str, str]
+    maxUploadSize: str
+    teamDriveThemes: gList[DriveTheme]
+    canCreateTeamDrives: bool
 
 
 class Permission(gDataclass):
@@ -228,33 +255,6 @@ class File(gDataclass):
     sha256Checksum: str
 
 
-class About(gDataclass):
-    class DriveTheme(gDataclass):
-        id: str
-        backgroundImageLink: str
-        colorRgb: str
-
-    class StorageQuota(gDataclass):
-        limit: str
-        usageInDrive: str
-        usageInDriveTrash: str
-        usage: str
-
-    kind: str
-    storageQuota: StorageQuota
-    driveThemes: gList[DriveTheme]
-    canCreateDrives: bool
-    importFormats: dict[str, Any]
-    exportFormats: dict[str, Any]
-    appInstalled: bool
-    user: User
-    folderColorPalette: list[str]
-    maxImportSizes: dict[str, str]
-    maxUploadSize: str
-    teamDriveThemes: gList[DriveTheme]
-    canCreateTeamDrives: bool
-
-
 class Channel(gDataclass):
     payload: bool
     id: str
@@ -383,3 +383,34 @@ class Revision(gDataclass):
     size: str
     originalFilename: str
     lastModifyingUser: User
+
+
+class Reply(gDataclass):
+    id: str
+    kind: str
+    createdTime: str
+    modifiedTime: str
+    action: str
+    author: User
+    deleted: bool
+    htmlContent: str
+    content: str
+
+
+class Comment(gDataclass):
+    class QuotedFileContent(gDataclass):
+        mimeType: str
+        value: str
+
+    id: str
+    kind: str
+    createdTime: str
+    modifiedTime: str
+    resolved: bool
+    anchor: str
+    replies: gList[Reply]
+    author: User
+    deleted: bool
+    htmlContent: str
+    content: str
+    quotedFileContent: QuotedFileContent

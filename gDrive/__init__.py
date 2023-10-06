@@ -1,10 +1,13 @@
-from gService import gCredentials, gService, executeGDataResource
+from gService import gCredentials, gService
+from gData import executeGDataResource
 from .About import gDriveAbout
 from .Changes import gDriveChanges
 from .Channels import gDriveChannels
+from .Comments import gDriveComments
 from .Drives import gDriveDrives
 from .Files import gDriveFiles
 from .Permissions import gDrivePermissions
+from .Replies import gDriveReplies
 from .Revisions import gDriveRevisions
 from .query import FileQueryTerm, SharedDriveQueryTerm
 
@@ -36,7 +39,9 @@ class gDrive(gService):
         self.about = gDriveAbout(self._service.about())
         self.changes = gDriveChanges(self._service.changes())
         self.channels = gDriveChannels(self._service.channels())
+        self.comments = gDriveComments(self._service.comments())
         self.drives = gDriveDrives(self._service.drives())
         self.files = gDriveFiles(self._service.files())
         self.permissions = gDrivePermissions(self._service.permissions())
+        self.replies = gDriveReplies(self._service.replies())
         self.revisions = gDriveRevisions(self._service.revisions())

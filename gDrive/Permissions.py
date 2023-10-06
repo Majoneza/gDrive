@@ -15,7 +15,7 @@ class gDrivePermissions(gSubService):
         transferOwnership: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Permission:
-        return executeResourceSelf(self, body="permission")
+        return executeResourceSelf(self, "executeOnlyOnce", body="permission")
 
     def delete(
         self,
@@ -24,7 +24,7 @@ class gDrivePermissions(gSubService):
         supportsAllDrives: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> None:
-        return executeResourceSelf(self, checkError=True)
+        return executeResourceSelf(self, "checkForErrors")
 
     def get(
         self,
@@ -33,7 +33,7 @@ class gDrivePermissions(gSubService):
         supportsAllDrives: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Permission:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, "execute")
 
     def list(
         self,
@@ -44,7 +44,7 @@ class gDrivePermissions(gSubService):
         useDomainAdminAccess: bool | None = None,
         includePermissionsForView: str | None = None,
     ) -> Permissions.List:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, "execute")
 
     def update(
         self,
@@ -54,6 +54,6 @@ class gDrivePermissions(gSubService):
         removeExpiration: bool | None = None,
         supportsAllDrives: bool | None = None,
         transferOwnership: bool | None = None,
-        useDomainAdminAccess: bool | None = None
+        useDomainAdminAccess: bool | None = None,
     ) -> Permission:
-        return executeResourceSelf(self, body="permission")
+        return executeResourceSelf(self, "executeOnlyOnce", body="permission")

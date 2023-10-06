@@ -1,6 +1,6 @@
 import inspect
 import os
-from typing import Any, Callable, Dict, List, Iterable, Optional, TypeVar, Type
+from typing import Any, Callable, cast, Dict, List, Iterable, Optional, TypeVar, Type
 
 T = TypeVar("T")
 
@@ -13,13 +13,15 @@ class Object(object):
     pass
 
 
-def dictsIterable2objectList(instance: Iterable[Any], obj: Type[Any] = Object) -> List[Any]:
+def dictsIterable2objectList(
+    instance: Iterable[Any], obj: Type[Any] = Object
+) -> List[Any]:
     result: List[Any] = []
     for v in instance:
         if type(v) is dict:
-            v = dict2object(v, obj)
+            v = dict2object(cast(dict[Any, Any], v), obj)
         elif type(v) is list or type(v) is tuple:
-            v = dictsIterable2objectList(v, obj)
+            v = dictsIterable2objectList(cast(Iterable[Any], v), obj)
         result.append(v)
     return result
 
@@ -28,20 +30,22 @@ def dict2object(instance: Dict[Any, Any], obj: Type[T] = Object) -> T:
     result = obj()
     for k, v in instance.items():
         if type(v) is dict:
-            v = dict2object(v, obj)
+            v = dict2object(cast(dict[Any, Any], v), obj)
         elif type(v) is list or type(v) is tuple:
-            v = dictsIterable2objectList(v, obj)
+            v = dictsIterable2objectList(cast(Iterable[Any], v), obj)
         setattr(result, k, v)
     return result
 
 
-def objectsIterable2dictsList(lst: Iterable[object], base: Type[Any] = Object) -> List[Any]:
+def objectsIterable2dictsList(
+    lst: Iterable[object], base: Type[Any] = Object
+) -> List[Any]:
     result: list[Any] = []
     for v in lst:
         if type(v).__base__ is base:
             v = object2dict(v, base)
         elif type(v) is list or type(v) is tuple:
-            v = objectsIterable2dictsList(v, base)
+            v = objectsIterable2dictsList(cast(Iterable[Any], v), base)
         result.append(v)
     return result
 
@@ -53,7 +57,7 @@ def object2dict(obj: object, base: Type[Any] = Object) -> dict[Any, Any]:
         if type(v).__base__ is base:
             v = object2dict(v, base)
         elif type(v) is list or type(v) is tuple:
-            v = objectsIterable2dictsList(v, base)
+            v = objectsIterable2dictsList(cast(Iterable[Any], v), base)
         result[k] = v
     return result
 
@@ -134,10 +138,6 @@ def resolveVariableInheritancePath(
         else:
             setattr(cls, variableName, previous + "." + variableName)
     return cls
-
-
-def first(it: Iterable[T]) -> T:
-    return next(iter(it))
 
 
 def mergeDicts(dicts: Iterable[dict[Any, Any]]) -> dict[Any, Any]:

@@ -8,7 +8,7 @@ class gDriveChanges(gSubService):
     def getStartPageToken(
         self, driveId: str | None = None, supportsAllDrives: bool | None = None
     ) -> Changes.GetStartPageToken:
-        return executeResourceSelf(self, onlyExecuteOnce=True)
+        return executeResourceSelf(self, "executeOnlyOnce")
 
     def list(
         self,
@@ -24,7 +24,7 @@ class gDriveChanges(gSubService):
         includePermissionsForView: str,
         includeLabels: List[str],
     ) -> Changes.List:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, "execute")
 
     def watch(
         self,
@@ -43,6 +43,6 @@ class gDriveChanges(gSubService):
     ) -> Channel:
         return executeResourceSelf(
             self,
+            "executeOnlyOnce",
             body="channel",
-            onlyExecuteOnce=True,
         )

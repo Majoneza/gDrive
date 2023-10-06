@@ -47,10 +47,10 @@ class gDriveFiles(gSubService):
         return uploadResourceSelf(self, "filePath", "resumable", body="fileMetadata")
 
     def delete(self, fileId: str, supportsAllDrives: bool | None = None) -> None:
-        return executeResourceSelf(self, checkError=True, onlyExecuteOnce=True)
+        return executeResourceSelf(self, "checkForErrors")
 
     def emptyTrash(self, driveId: str | None = None) -> None:
-        return executeResourceSelf(self, checkError=True, onlyExecuteOnce=True)
+        return executeResourceSelf(self, "checkForErrors")
 
     def export(self, fileId: str, fd: BufferedWriter, mimeType: str | None = None):
         return downloadResourceSelf("fd")
@@ -61,7 +61,7 @@ class gDriveFiles(gSubService):
         space: str | None = None,
         type: str | None = None,
     ) -> Files.GenerateIds:
-        return executeResourceSelf(self, onlyExecuteOnce=True)
+        return executeResourceSelf(self, "executeOnlyOnce")
 
     @overload
     def get(
@@ -99,7 +99,7 @@ class gDriveFiles(gSubService):
         if fd is not None:
             return downloadResourceSelf("fd")
         else:
-            return executeResourceSelf(self)
+            return executeResourceSelf(self, "execute")
 
     def list(
         self,
@@ -115,17 +115,17 @@ class gDriveFiles(gSubService):
         includePermissionsForView: str | None = None,
         includeLabels: List[str] | None = None,
     ) -> Files.List:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, "execute")
 
     def listLabels(
         self, fileId: str, maxResults: int | None = None, pageToken: str | None = None
     ) -> Files.ListLabels:
-        return executeResourceSelf(self)
+        return executeResourceSelf(self, "execute")
 
     def modifyLabels(
         self, fileId: str, request: Files.ModifyLabelsRequest
     ) -> Files.ModifyLabels:
-        return executeResourceSelf(self, onlyExecuteOnce=True)
+        return executeResourceSelf(self, "executeOnlyOnce")
 
     def update(
         self,
@@ -158,7 +158,7 @@ class gDriveFiles(gSubService):
         includePermissionsForView: str | None = None,
         includeLabels: List[str] | None = None,
     ) -> Channel:
-        return executeResourceSelf(self, body="channel", onlyExecuteOnce=True)
+        return executeResourceSelf(self, "executeOnlyOnce", body="channel")
 
     def GetPathId(self, path: str) -> str:
         parts = splitPath(path)

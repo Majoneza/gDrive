@@ -1,4 +1,5 @@
-from gService import gResource, gData, gDataclass
+from gService import gResource
+from gData import gData, gDataclass
 from googleapiclient.http import (
     MediaIoBaseDownload,
     MediaFileUpload,
@@ -11,7 +12,7 @@ from utils import (
     getFunctionVariables,
     getFunctionReturnType,
 )
-from typing import Any, Dict, Generator
+from typing import Any, cast, Dict, Literal, Generator
 
 
 def downloadMedia(
@@ -34,7 +35,7 @@ def convertKwargs(kwargs: dict[str, Any]):
         if type(v).__base__ is gDataclass:
             kwargs[k] = object2dict(v, gDataclass)
         elif type(v) is list:
-            kwargs[k] = ",".join(v)
+            kwargs[k] = ",".join(cast(list[Any], v))
 
 
 def prepareResourceSelf(
@@ -53,22 +54,23 @@ def prepareResourceSelf(
 
 def executeResourceSelf(
     module: object,
+    executionPolicy: Literal["execute", "executeOnlyOnce", "checkForErrors"],
     body: str | None = None,
     resourceVariableName: str = "_resource",
-    checkError: bool = False,
-    onlyExecuteOnce: bool = False,
     depth: int = 1,
 ) -> Any:
     variableClass = getFunctionReturnType(module, depth + 1)
     name = getFunctionName(depth + 1)
     kwargs = getFunctionVariables(depth + 1)
     resource, kwargs = prepareResourceSelf(name, kwargs, body, resourceVariableName)
-    if checkError:
+    if executionPolicy == "checkForErrors":
         data = resource(**kwargs).execute()
         if len(data) != 0:
             raise Exception(data)
     else:
-        return gData(variableClass, resource, kwargs, onlyExecuteOnce)
+        return gData(
+            variableClass, resource, kwargs, executionPolicy == "executeOnlyOnce"
+        )
 
 
 def uploadResourceSelf(
