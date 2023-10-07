@@ -1,5 +1,5 @@
 from gService import gSubService
-from gDriveData import Channel, Changes
+from gDriveData import Channel, Changes, IncludePermissionsForView, Space
 from .utils import executeResourceSelf
 from typing import List
 
@@ -19,9 +19,9 @@ class gDriveChanges(gSubService):
         pageSize: int,
         pageToken: str,
         restrictToMyDrive: bool,
-        spaces: List[str],
+        spaces: List[Space],
         supportsAllDrives: bool,
-        includePermissionsForView: str,
+        includePermissionsForView: IncludePermissionsForView,
         includeLabels: List[str],
     ) -> Changes.List:
         return executeResourceSelf(self, "execute")
@@ -36,9 +36,9 @@ class gDriveChanges(gSubService):
         pageSize: int,
         pageToken: str,
         restrictToMyDrive: bool,
-        spaces: List[str],
+        spaces: List[Space],
         supportsAllDrives: bool,
-        includePermissionsForView: str,
+        includePermissionsForView: IncludePermissionsForView,
         includeLabels: List[str],
     ) -> Channel:
         return executeResourceSelf(

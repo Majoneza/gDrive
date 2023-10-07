@@ -1,5 +1,5 @@
 from gService import gSubService
-from gDriveData import Permission, Permissions
+from gDriveData import Permission, Permissions, IncludePermissionsForView
 from .utils import executeResourceSelf
 
 
@@ -42,7 +42,7 @@ class gDrivePermissions(gSubService):
         pageToken: str | None = None,
         supportsAllDrives: bool | None = None,
         useDomainAdminAccess: bool | None = None,
-        includePermissionsForView: str | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
     ) -> Permissions.List:
         return executeResourceSelf(self, "execute")
 

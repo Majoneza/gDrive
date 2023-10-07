@@ -53,7 +53,6 @@ def objectsIterable2dictsList(
 def object2dict(obj: object, base: Type[Any] = Object) -> dict[Any, Any]:
     result: dict[Any, Any] = {}
     for k, v in obj.__dict__.items():
-        v: object
         if type(v).__base__ is base:
             v = object2dict(v, base)
         elif type(v) is list or type(v) is tuple:
@@ -154,6 +153,5 @@ def mergeDicts(dicts: Iterable[dict[Any, Any]]) -> dict[Any, Any]:
                 result[k] = v
     for k, v in result.items():
         if type(v) is list:
-            v: list[Any]
-            result[k] = mergeDicts(v)
+            result[k] = mergeDicts(cast(list[Any], v))
     return result

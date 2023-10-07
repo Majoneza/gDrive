@@ -1,5 +1,5 @@
 from gData import gDataclass, gList
-from typing import Any
+from typing import Any, Literal
 
 
 class User(gDataclass):
@@ -414,3 +414,7 @@ class Comment(gDataclass):
     htmlContent: str
     content: str
     quotedFileContent: QuotedFileContent
+
+
+IncludePermissionsForView = Literal["published"]
+Space = Literal["drive", "appDataFolder"]

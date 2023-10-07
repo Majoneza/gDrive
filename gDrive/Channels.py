@@ -5,4 +5,4 @@ from .utils import executeResourceSelf
 
 class gDriveChannels(gSubService):
     def stop(self, channel: Channel) -> None:
-        return executeResourceSelf(self, "checkForErrors")
+        return executeResourceSelf(self, "checkForErrors", body="channel")

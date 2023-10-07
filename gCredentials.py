@@ -1,7 +1,7 @@
 import os
 import json
 from cipherio import CBinaryIO
-from typing import Callable, Literal, Sequence
+from typing import BinaryIO, Callable, Literal, Self, Sequence
 
 from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
@@ -23,7 +23,7 @@ class gCredentials:
         credentials_path: str = "credentials.json",
         token_path: str = "token.json",
         password: str | None = None,
-    ):
+    ) -> None:
         self._scopes = scopes
         self._credentials_path = credentials_path
         self._token_path = token_path
@@ -32,12 +32,11 @@ class gCredentials:
             self._token_key = CBinaryIO.createKey(token_path, password)
         else:
             self._credentials_key = self._token_key = None
-        if not self._load():
-            raise ValueError("Unable to acquire credentials")
+        self._attemptToLoad()
 
     def _open_file(
         self, file: Literal["credentials", "token"], mode: Literal["r", "w"]
-    ):
+    ) -> BinaryIO | CBinaryIO:
         path, key = (
             (self._credentials_path, self._credentials_key)
             if file == "credentials"
@@ -48,7 +47,35 @@ class gCredentials:
         else:
             return CBinaryIO.open(path, mode, key=key)
 
-    def _fetch_credentials_v0(self, url_callback: Callable[[str], str]):
+    def _save_credentials_to_file(self) -> None:
+        with self._open_file("token", "w") as file:
+            file.write(self._credentials.to_json().encode())
+
+    def _update_credentials(self) -> bool:
+        if self._credentials.valid:
+            return True
+        if self._credentials.expired and self._credentials.refresh_token:
+            try:
+                self._credentials.refresh(Request())
+            except RefreshError:
+                pass
+        return self._credentials.valid
+
+    def _attemptToLoad(self) -> bool:
+        if os.path.exists(self._token_path):
+            with self._open_file("token", "r") as file:
+                self._credentials = Credentials.from_authorized_user_info(
+                    json.load(file), self._scopes
+                )
+            return self._update_credentials()
+        return False
+
+    def addCredentials(self, credentails: Credentials) -> bool:
+        self._credentials = credentails
+        self._save_credentials_to_file()
+        return self._update_credentials()
+
+    def fetchCredentialsWithURL(self, url_callback: Callable[[str], str]) -> bool:
         with self._open_file("credentials", "r") as file:
             flow = Flow.from_client_config(
                 json.load(file),
@@ -58,39 +85,21 @@ class gCredentials:
         url, _ = flow.authorization_url()
         code = url_callback(url)
         flow.fetch_token(code=code)
-        return flow.credentials
+        return self.addCredentials(flow.credentials)
 
-    def _fetch_credentials(self):
+    def fetchCredentialsWithServer(self) -> bool:
         with self._open_file("credentials", "r") as file:
             flow = InstalledAppFlow.from_client_config(json.load(file), self._scopes)
-        self._credentials = flow.run_local_server(port=9000)
-        # Save the credentials for the next run
-        with self._open_file("token", "w") as file:
-            file.write(self._credentials.to_json().encode())
+        credentials = flow.run_local_server()
+        return self.addCredentials(credentials)
 
-    def _load(self):
-        if os.path.exists(self._token_path):
-            with self._open_file("token", "r") as file:
-                self._credentials = Credentials.from_authorized_user_info(
-                    json.load(file), self._scopes
-                )
-        else:
-            self._fetch_credentials()
-        return self.update()
+    def acquireCredentials(self) -> Self:
+        if not self._update_credentials() and not self.fetchCredentialsWithServer():
+            raise RuntimeError("Unable to fetch credentials")
+        return self
 
-    def update(self):
-        # The file token.json stores the user's access and refresh tokens, and is
-        # created automatically when the authorization flow completes for the first
-        # time.
-        if self._credentials.valid:
-            return True
-        if self._credentials.expired and self._credentials.refresh_token:
-            try:
-                self._credentials.refresh(Request())
-            except RefreshError:
-                pass
-        self._fetch_credentials()
+    def isValid(self) -> bool:
         return self._credentials.valid
 
-    def get(self):
+    def get(self) -> Credentials:
         return self._credentials

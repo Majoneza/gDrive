@@ -1,3 +1,4 @@
+import datetime
 from gService import gSubService
 from .utils import executeResourceSelf
 from gDriveData import Comment, Comments
@@ -24,7 +25,7 @@ class gDriveComments(gSubService):
         includeDeleted: bool | None = None,
         pageSize: int | None = None,
         pageToken: str | None = None,
-        startModifiedTime: str | None = None,
+        startModifiedTime: datetime.datetime | None = None,
     ) -> Comments.List:
         return executeResourceSelf(self, "execute")
 

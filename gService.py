@@ -28,8 +28,8 @@ class gService:
     def __init__(
         self, credentials: gCredentials, serviceName: str, version: str
     ) -> None:
-        if not credentials.update():
-            raise ValueError("Unable to acquire credentials")
+        if not credentials.isValid():
+            raise ValueError("Got invalid credentials")
         self._service = build(serviceName, version, credentials=credentials.get())
 
     def __enter__(self) -> Self:

@@ -352,7 +352,6 @@ class gData(Generic[T], gBaseObjectData[T]):
         self.setData(data)
 
     def getFieldsDict(self, fields: FieldsDict | None) -> None:
-        print("... Fetching resources ...")
         if fields is not None:
             googleFields = self._convertFieldsToGoogleFormat(fields)
         else:

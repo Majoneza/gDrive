@@ -1,3 +1,4 @@
+import datetime
 from gService import gResource
 from gData import gData, gDataclass
 from googleapiclient.http import (
@@ -32,10 +33,12 @@ def moveToKwargsBody(kwargs: Dict[str, Any], name: str):
 
 def convertKwargs(kwargs: dict[str, Any]):
     for k, v in kwargs.items():
-        if type(v).__base__ is gDataclass:
+        if isinstance(v, gDataclass):
             kwargs[k] = object2dict(v, gDataclass)
         elif type(v) is list:
             kwargs[k] = ",".join(cast(list[Any], v))
+        elif type(v) is datetime.datetime:
+            kwargs[k] = v.isoformat()
 
 
 def prepareResourceSelf(

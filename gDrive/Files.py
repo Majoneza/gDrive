@@ -1,6 +1,6 @@
 import os
 from gService import gSubService
-from gDriveData import Channel, Files, File
+from gDriveData import Channel, Files, File, IncludePermissionsForView, Space
 from utils import splitPath
 from .query import BridgeTerm, FileQueryTerm as fq
 from .utils import (
@@ -10,7 +10,23 @@ from .utils import (
 )
 from googleapiclient.http import MediaDownloadProgress
 from io import BufferedWriter
-from typing import Any, List, Generator, overload
+from typing import Any, List, Literal, Generator, overload
+
+
+GenerateIdsType = Literal["files", "shortcuts"]
+ListOrderByItems = Literal[
+    "createdTime",
+    "folder",
+    "modifiedByMeTime",
+    "modifiedTime",
+    "name",
+    "name_natural",
+    "quotaBytesUsed",
+    "recency",
+    "sharedWithMeTime",
+    "starred",
+    "viewedByMeTime",
+]
 
 
 class gDriveFiles(gSubService):
@@ -40,7 +56,7 @@ class gDriveFiles(gSubService):
         ocrLanguage: str | None = None,
         supportsAllDrives: bool | None = None,
         useContentAsIndexableText: bool | None = None,
-        includePermissionsForView: str | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
         resumable: bool = False,
     ) -> File:
@@ -59,7 +75,7 @@ class gDriveFiles(gSubService):
         self,
         count: int | None = None,
         space: str | None = None,
-        type: str | None = None,
+        type: GenerateIdsType | None = None,
     ) -> Files.GenerateIds:
         return executeResourceSelf(self, "executeOnlyOnce")
 
@@ -70,7 +86,7 @@ class gDriveFiles(gSubService):
         fd: BufferedWriter,
         acknowledgeAbuse: bool | None = None,
         supportsAllDrives: bool | None = None,
-        includePermissionsForView: str | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
     ) -> Generator[MediaDownloadProgress, Any, None]:
         ...
@@ -82,7 +98,7 @@ class gDriveFiles(gSubService):
         fd: None = None,
         acknowledgeAbuse: bool | None = None,
         supportsAllDrives: bool | None = None,
-        includePermissionsForView: str | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
     ) -> File:
         ...
@@ -93,7 +109,7 @@ class gDriveFiles(gSubService):
         fd: BufferedWriter | None = None,
         acknowledgeAbuse: bool | None = None,
         supportsAllDrives: bool | None = None,
-        includePermissionsForView: str | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
     ):
         if fd is not None:
@@ -103,16 +119,16 @@ class gDriveFiles(gSubService):
 
     def list(
         self,
-        corpora: str | None = None,
+        corpora: Literal["user", "domain", "drive", "allDrives"] | None = None,
         driveId: str | None = None,
         includeItemsFromAllDrives: bool | None = None,
-        orderBy: List[str] | None = None,
+        orderBy: List[ListOrderByItems] | None = None,
         pageSize: int | None = None,
         pageToken: str | None = None,
         q: str | BridgeTerm | None = None,
-        spaces: List[str] | None = None,
+        spaces: List[Space] | None = None,
         supportsAllDrives: bool | None = None,
-        includePermissionsForView: str | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
     ) -> Files.List:
         return executeResourceSelf(self, "execute")
@@ -123,9 +139,9 @@ class gDriveFiles(gSubService):
         return executeResourceSelf(self, "execute")
 
     def modifyLabels(
-        self, fileId: str, request: Files.ModifyLabelsRequest
+        self, request: Files.ModifyLabelsRequest, fileId: str
     ) -> Files.ModifyLabels:
-        return executeResourceSelf(self, "executeOnlyOnce")
+        return executeResourceSelf(self, "executeOnlyOnce", body="request")
 
     def update(
         self,
@@ -138,7 +154,7 @@ class gDriveFiles(gSubService):
         removeParents: List[str] | None = None,
         supportsAllDrives: bool | None = None,
         useContentAsIndexableText: bool | None = None,
-        includePermissionsForView: str | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
         resumable: bool = False,
     ) -> File:
@@ -155,7 +171,7 @@ class gDriveFiles(gSubService):
         fileId: str,
         supportsAllDrives: bool | None = None,
         acknowledgeAbuse: bool | None = None,
-        includePermissionsForView: str | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
     ) -> Channel:
         return executeResourceSelf(self, "executeOnlyOnce", body="channel")
