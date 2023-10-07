@@ -1,14 +1,14 @@
-from gService import gSubService
-from gDriveData import Channel, Changes, IncludePermissionsForView, Space
-from .utils import executeResourceSelf
+from gService.gResourceManager import gResourceManager
+from .data import Channel, Changes
+from .data.helpers import IncludePermissionsForView, Space
 from typing import List
 
 
-class gDriveChanges(gSubService):
+class gDriveChanges(gResourceManager):
     def getStartPageToken(
         self, driveId: str | None = None, supportsAllDrives: bool | None = None
     ) -> Changes.GetStartPageToken:
-        return executeResourceSelf(self, "executeOnlyOnce")
+        return self._getResource("executeOnlyOnce")
 
     def list(
         self,
@@ -24,7 +24,7 @@ class gDriveChanges(gSubService):
         includePermissionsForView: IncludePermissionsForView,
         includeLabels: List[str],
     ) -> Changes.List:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def watch(
         self,
@@ -41,8 +41,7 @@ class gDriveChanges(gSubService):
         includePermissionsForView: IncludePermissionsForView,
         includeLabels: List[str],
     ) -> Channel:
-        return executeResourceSelf(
-            self,
+        return self._getResource(
             "executeOnlyOnce",
             body="channel",
         )

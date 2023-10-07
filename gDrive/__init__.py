@@ -1,5 +1,5 @@
 from gService import gCredentials, gService
-from gData import executeGDataResource
+from gService.gData import executeGDataResource
 from .About import gDriveAbout
 from .Changes import gDriveChanges
 from .Channels import gDriveChannels
@@ -36,12 +36,12 @@ class Scopes:
 class gDrive(gService):
     def __init__(self, credentials: gCredentials):
         super().__init__(credentials, "drive", "v3")
-        self.about = gDriveAbout(self._service.about())
-        self.changes = gDriveChanges(self._service.changes())
-        self.channels = gDriveChannels(self._service.channels())
-        self.comments = gDriveComments(self._service.comments())
-        self.drives = gDriveDrives(self._service.drives())
-        self.files = gDriveFiles(self._service.files())
-        self.permissions = gDrivePermissions(self._service.permissions())
-        self.replies = gDriveReplies(self._service.replies())
-        self.revisions = gDriveRevisions(self._service.revisions())
+        self.about = gDriveAbout(self._resource.about())
+        self.changes = gDriveChanges(self._resource.changes())
+        self.channels = gDriveChannels(self._resource.channels())
+        self.comments = gDriveComments(self._resource.comments())
+        self.drives = gDriveDrives(self._resource.drives())
+        self.files = gDriveFiles(self._resource.files())
+        self.permissions = gDrivePermissions(self._resource.permissions())
+        self.replies = gDriveReplies(self._resource.replies())
+        self.revisions = gDriveRevisions(self._resource.revisions())

@@ -1,8 +1,7 @@
-from gService import gSubService
-from gDriveData import About
-from .utils import executeResourceSelf
+from gService.gResourceManager import gResourceManager
+from .data import About
 
 
-class gDriveAbout(gSubService):
+class gDriveAbout(gResourceManager):
     def get(self) -> About:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")

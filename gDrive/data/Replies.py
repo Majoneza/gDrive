@@ -1,5 +1,5 @@
-from gData import gDataclass, gList
-from gDriveData import Reply
+from gService.gData import gDataclass, gList
+from .base import Reply
 
 
 class List(gDataclass):

@@ -1,13 +1,12 @@
+from gService.gResourceManager import gResourceManager
 import uuid
-from gService import gSubService
-from gDriveData import Drive, Drives
+from .data import Drive, Drives
 from .query import BridgeTerm
-from .utils import executeResourceSelf
 
 
-class gDriveDrives(gSubService):
+class gDriveDrives(gResourceManager):
     def create(self, drive: Drive, requestId: str = str(uuid.uuid4())) -> Drive:
-        return executeResourceSelf(self, "executeOnlyOnce", body="drive")
+        return self._getResource("executeOnlyOnce", body="drive")
 
     def delete(
         self,
@@ -15,13 +14,13 @@ class gDriveDrives(gSubService):
         useDomainAdminAccess: bool | None = None,
         allowItemDeletion: bool | None = None,
     ) -> None:
-        return executeResourceSelf(self, "checkForErrors")
+        return self._getResource("checkForErrors")
 
     def get(self, driveId: str, useDomainAdminAccess: bool | None = None) -> Drive:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def hide(self, driveId: str) -> Drive:
-        return executeResourceSelf(self, "executeOnlyOnce")
+        return self._getResource("executeOnlyOnce")
 
     def list(
         self,
@@ -30,10 +29,10 @@ class gDriveDrives(gSubService):
         q: str | BridgeTerm | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Drives.List:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def unhide(self, driveId: str) -> Drive:
-        return executeResourceSelf(self, "executeOnlyOnce")
+        return self._getResource("executeOnlyOnce")
 
     def update(
         self,
@@ -41,4 +40,4 @@ class gDriveDrives(gSubService):
         driveId: str,
         useDomainAdminAccess: bool | None = None,
     ) -> Drive:
-        return executeResourceSelf(self, "executeOnlyOnce", body="drive")
+        return self._getResource("executeOnlyOnce", body="drive")

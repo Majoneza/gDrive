@@ -1,15 +1,14 @@
+from gService.gResourceManager import gResourceManager
 import datetime
-from gService import gSubService
-from .utils import executeResourceSelf
-from gDriveData import Comment, Comments
+from .data import Comment, Comments
 
 
-class gDriveComments(gSubService):
+class gDriveComments(gResourceManager):
     def create(self, comment: Comment, fileId: str) -> Comment:
-        return executeResourceSelf(self, "executeOnlyOnce", body="comment")
+        return self._getResource("executeOnlyOnce", body="comment")
 
     def delete(self, fileId: str, commentId: str) -> None:
-        return executeResourceSelf(self, "checkForErrors")
+        return self._getResource("checkForErrors")
 
     def get(
         self,
@@ -17,7 +16,7 @@ class gDriveComments(gSubService):
         commentId: str,
         includeDeleted: bool | None = None,
     ) -> Comment:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def list(
         self,
@@ -27,7 +26,7 @@ class gDriveComments(gSubService):
         pageToken: str | None = None,
         startModifiedTime: datetime.datetime | None = None,
     ) -> Comments.List:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def update(self, comment: Comment, fileId: str, commentId: str) -> Comment:
-        return executeResourceSelf(self, "executeOnlyOnce", body="comment")
+        return self._getResource("executeOnlyOnce", body="comment")

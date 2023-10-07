@@ -1,4 +1,4 @@
-from gData import gDataclass, gList
+from gService.gData import gDataclass, gList
 from .base import File, Label
 
 

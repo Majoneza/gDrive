@@ -1,21 +1,20 @@
-from gService import gSubService
-from .utils import executeResourceSelf
-from gDriveData import Revision, Revisions
+from gService.gResourceManager import gResourceManager
+from .data import Revision, Revisions
 
 
-class gDriveRevisions(gSubService):
+class gDriveRevisions(gResourceManager):
     def delete(self, fileId: str, revisionId: str) -> None:
-        return executeResourceSelf(self, "checkForErrors")
+        return self._getResource("checkForErrors")
 
     def get(
         self, fileId: str, revisionId: str, acknowledgeAbuse: bool | None = None
     ) -> Revision:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def list(
         self, fileId: str, pageSize: int | None = None, pageToken: str | None = None
     ) -> Revisions.List:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def update(self, revision: Revision, fileId: str, revisionId: str) -> Revision:
-        return executeResourceSelf(self, "executeOnlyOnce", body="revision")
+        return self._getResource("executeOnlyOnce", body="revision")

@@ -1,7 +1,7 @@
-from gService import gResource
+from .gResource import gResource
 from itertools import chain, count
 from abc import abstractmethod
-from utils import mergeDicts
+from .utils import mergeDicts
 from typing import (
     Any,
     cast,
@@ -319,12 +319,12 @@ class gData(Generic[T], gBaseObjectData[T]):
         variableClass: Type[T],
         resource: gResource,
         kwargs: dict[str, Any] = {},
-        onlyExecuteOnce: bool = False,
+        executeOnlyOnce: bool = False,
     ) -> None:
         super().__init__(variableClass.__name__, variableClass)
         self._resource = resource
         self._kwargs = kwargs
-        self._onlyExecuteOnce = onlyExecuteOnce
+        self._executeOnlyOnce = executeOnlyOnce
         self._executed = False
 
     @staticmethod
@@ -345,7 +345,7 @@ class gData(Generic[T], gBaseObjectData[T]):
         return ",".join(fieldsFormat)
 
     def _execute(self, fields: str) -> None:
-        if self._onlyExecuteOnce and self._executed:
+        if self._executeOnlyOnce and self._executed:
             raise RuntimeError("This resource cannot be called twice")
         self._executed = True
         data = self._resource(**self._kwargs, fields=fields).execute()

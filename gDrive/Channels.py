@@ -1,8 +1,7 @@
-from gService import gSubService
-from gDriveData import Channel
-from .utils import executeResourceSelf
+from gService.gResourceManager import gResourceManager
+from .data import Channel
 
 
-class gDriveChannels(gSubService):
+class gDriveChannels(gResourceManager):
     def stop(self, channel: Channel) -> None:
-        return executeResourceSelf(self, "checkForErrors", body="channel")
+        return self._getResource("checkForErrors", body="channel")

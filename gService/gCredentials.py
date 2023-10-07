@@ -1,6 +1,6 @@
 import os
 import json
-from cipherio import CBinaryIO
+from .cipherio import CBinaryIO
 from typing import BinaryIO, Callable, Literal, Self, Sequence
 
 from google.auth.transport.requests import Request

@@ -1,5 +1,5 @@
-from gData import gDataclass, gList
-from gDriveData import Drive
+from gService.gData import gDataclass, gList
+from .base import Drive
 
 
 class List(gDataclass):

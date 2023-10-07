@@ -1,5 +1,5 @@
-from gData import gDataclass, gList
-from gDriveData import Revision
+from gService.gData import gDataclass, gList
+from .base import Revision
 
 
 class List(gDataclass):

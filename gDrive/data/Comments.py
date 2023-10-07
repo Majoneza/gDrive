@@ -1,5 +1,5 @@
-from gData import gDataclass, gList
-from gDriveData import Comment
+from gService.gData import gDataclass, gList
+from .base import Comment
 
 
 class List(gDataclass):

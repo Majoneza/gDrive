@@ -1,9 +1,9 @@
-from gService import gSubService
-from gDriveData import Permission, Permissions, IncludePermissionsForView
-from .utils import executeResourceSelf
+from gService.gResourceManager import gResourceManager
+from .data import Permission, Permissions
+from .data.helpers import IncludePermissionsForView
 
 
-class gDrivePermissions(gSubService):
+class gDrivePermissions(gResourceManager):
     def create(
         self,
         permission: Permission,
@@ -15,7 +15,7 @@ class gDrivePermissions(gSubService):
         transferOwnership: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Permission:
-        return executeResourceSelf(self, "executeOnlyOnce", body="permission")
+        return self._getResource("executeOnlyOnce", body="permission")
 
     def delete(
         self,
@@ -24,7 +24,7 @@ class gDrivePermissions(gSubService):
         supportsAllDrives: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> None:
-        return executeResourceSelf(self, "checkForErrors")
+        return self._getResource("checkForErrors")
 
     def get(
         self,
@@ -33,7 +33,7 @@ class gDrivePermissions(gSubService):
         supportsAllDrives: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Permission:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def list(
         self,
@@ -44,7 +44,7 @@ class gDrivePermissions(gSubService):
         useDomainAdminAccess: bool | None = None,
         includePermissionsForView: IncludePermissionsForView | None = None,
     ) -> Permissions.List:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def update(
         self,
@@ -56,4 +56,4 @@ class gDrivePermissions(gSubService):
         transferOwnership: bool | None = None,
         useDomainAdminAccess: bool | None = None,
     ) -> Permission:
-        return executeResourceSelf(self, "executeOnlyOnce", body="permission")
+        return self._getResource("executeOnlyOnce", body="permission")

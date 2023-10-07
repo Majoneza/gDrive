@@ -1,5 +1,5 @@
-from gData import gDataclass, gList
-from gDriveData import Permission
+from gService.gData import gDataclass, gList
+from .base import Permission
 
 
 class List(gDataclass):

@@ -1,12 +1,7 @@
 import inspect
-import os
 from typing import Any, Callable, cast, Dict, List, Iterable, Optional, TypeVar, Type
 
 T = TypeVar("T")
-
-
-def splitPath(path: str) -> list[str]:
-    return os.path.normpath(path).split(os.sep)
 
 
 class Object(object):

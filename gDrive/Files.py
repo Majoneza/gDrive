@@ -1,13 +1,9 @@
+from gService.gResourceManager import gResourceManager
 import os
-from gService import gSubService
-from gDriveData import Channel, Files, File, IncludePermissionsForView, Space
-from utils import splitPath
+from .data import Channel, Files, File
+from .data.helpers import IncludePermissionsForView, Space
+from .utils import splitPath
 from .query import BridgeTerm, FileQueryTerm as fq
-from .utils import (
-    downloadResourceSelf,
-    uploadResourceSelf,
-    executeResourceSelf,
-)
 from googleapiclient.http import MediaDownloadProgress
 from io import BufferedWriter
 from typing import Any, List, Literal, Generator, overload
@@ -29,7 +25,7 @@ ListOrderByItems = Literal[
 ]
 
 
-class gDriveFiles(gSubService):
+class gDriveFiles(gResourceManager):
     def copy(
         self,
         fileId: str,
@@ -44,7 +40,7 @@ class gDriveFiles(gSubService):
         includeLabels: List[str] | None = None,
         resumable: bool = False,
     ) -> File:
-        return uploadResourceSelf(self, "filePath", "resumable", body="fileMetadata")
+        return self._uploadResource("filePath", "resumable", body="fileMetadata")
 
     def create(
         self,
@@ -60,16 +56,16 @@ class gDriveFiles(gSubService):
         includeLabels: List[str] | None = None,
         resumable: bool = False,
     ) -> File:
-        return uploadResourceSelf(self, "filePath", "resumable", body="fileMetadata")
+        return self._uploadResource("filePath", "resumable", body="fileMetadata")
 
     def delete(self, fileId: str, supportsAllDrives: bool | None = None) -> None:
-        return executeResourceSelf(self, "checkForErrors")
+        return self._getResource("checkForErrors")
 
     def emptyTrash(self, driveId: str | None = None) -> None:
-        return executeResourceSelf(self, "checkForErrors")
+        return self._getResource("checkForErrors")
 
     def export(self, fileId: str, fd: BufferedWriter, mimeType: str | None = None):
-        return downloadResourceSelf("fd")
+        return self._downloadResource("fd")
 
     def generateIds(
         self,
@@ -77,7 +73,7 @@ class gDriveFiles(gSubService):
         space: str | None = None,
         type: GenerateIdsType | None = None,
     ) -> Files.GenerateIds:
-        return executeResourceSelf(self, "executeOnlyOnce")
+        return self._getResource("executeOnlyOnce")
 
     @overload
     def get(
@@ -113,9 +109,9 @@ class gDriveFiles(gSubService):
         includeLabels: List[str] | None = None,
     ):
         if fd is not None:
-            return downloadResourceSelf("fd")
+            return self._downloadResource("fd")
         else:
-            return executeResourceSelf(self, "execute")
+            return self._getResource("execute")
 
     def list(
         self,
@@ -131,17 +127,17 @@ class gDriveFiles(gSubService):
         includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
     ) -> Files.List:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def listLabels(
         self, fileId: str, maxResults: int | None = None, pageToken: str | None = None
     ) -> Files.ListLabels:
-        return executeResourceSelf(self, "execute")
+        return self._getResource("execute")
 
     def modifyLabels(
         self, request: Files.ModifyLabelsRequest, fileId: str
     ) -> Files.ModifyLabels:
-        return executeResourceSelf(self, "executeOnlyOnce", body="request")
+        return self._getResource("executeOnlyOnce", body="request")
 
     def update(
         self,
@@ -158,8 +154,7 @@ class gDriveFiles(gSubService):
         includeLabels: List[str] | None = None,
         resumable: bool = False,
     ) -> File:
-        return uploadResourceSelf(
-            self,
+        return self._uploadResource(
             "filePath",
             "resumable",
             body="fileMetadata",
@@ -174,7 +169,7 @@ class gDriveFiles(gSubService):
         includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
     ) -> Channel:
-        return executeResourceSelf(self, "executeOnlyOnce", body="channel")
+        return self._getResource("executeOnlyOnce", body="channel")
 
     def GetPathId(self, path: str) -> str:
         parts = splitPath(path)
