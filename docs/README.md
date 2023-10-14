@@ -6,7 +6,7 @@ Official documentation of the gDrive library.
 
 ## Basic guide
 
-Before starting the guide make sure to get [OAuth client ID credentials](https://developers.google.com/workspace/guides/create-credentials) and save the file as `credentials.json` inside the same directory of the script using `gCredentials`. Okay, let's begin.
+Before starting the guide make sure to get [OAuth client ID credentials](https://developers.google.com/workspace/guides/create-credentials) and save the file as `credentials.json` inside the directory of the script using `gCredentials`. Okay, let's begin.
 
 The most important thing to have in mind when working with this library is that every API call is **`lazy`**. Because of that some library usages have to be carefully programmed. For example when we are listing files(`files.list`) we can make as many API calls as we want because listing doesn't change the state of the drive, but the same isn't true for creating files(`files.create`).
 
@@ -99,6 +99,12 @@ print(file.name, file.driveId, file.capabilities.canDelete)
 from gDrive import execute
 
 execute(drive.files.create("./myfile.mp4", File(name="video.mp4")))
+```
+
+7) Don't get any fields just execute the API call. There is a second simpler way but the static checker will complain.
+
+```python
+drive.files.create("./myfile.mp4", File(name="video.mp4")).execute()
 ```
 
 To hammer the point home we will take an example of listing file in the root directory of the drive. Because we are using an API call that doesn't change the state of the drive we don't have to be careful about how we get fields. Of course if we wanted faster execution with less bandwidth usage then we should still try to minimize the amount of API calls.
