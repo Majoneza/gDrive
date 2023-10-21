@@ -7,9 +7,11 @@ from typing import (
     List,
     Iterable,
     Optional,
+    Sequence,
     TypeVar,
     Type,
     get_origin,
+    get_overloads,
 )
 
 T = TypeVar("T")
@@ -96,15 +98,7 @@ def getFunctionReturnType(module: object, depth: int = 1) -> Any:
 def getFunctionVariables(depth: int = 1) -> Dict[str, Any]:
     frame = inspect.stack()[depth].frame
     code = frame.f_code
-    return {
-        k: v
-        for k, v in frame.f_locals.items()
-        if k in code.co_varnames and v is not None
-    }
-
-
-def getFunctionVariablesSelf(depth: int = 1) -> Dict[str, Any]:
-    return {k: v for k, v in getFunctionVariables(depth + 1).items() if k != "self"}
+    return {k: v for k, v in frame.f_locals.items() if k in code.co_varnames}
 
 
 def optional(cls: Type[T]) -> Type[T]:
@@ -116,13 +110,17 @@ def optional(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def removeNones(instance: object) -> Object:
+def removeNonesObject(instance: object) -> Object:
     obj = Object()
     for k in instance.__dict__.keys():
         v = getattr(instance, k)
         if v is not None:
             setattr(obj, k, v)
     return obj
+
+
+def removeNonesDict(dictionary: Dict[K, V]) -> Dict[K, V]:
+    return {k: v for k, v in dictionary.items() if v is not None}
 
 
 def resolveVariableName(cls: Type[T]) -> Type[T]:
@@ -176,3 +174,43 @@ def isSubclassOrigin(some_type: type, real_class: type):
         return issubclass(origin, real_class)
     else:
         return issubclass(some_type, real_class)
+
+
+def dictsDiff(dicts: Sequence[dict[K, V]]) -> dict[K, list[V]]:
+    keys = cast(set[K], set()).union(*map(lambda x: x.keys(), dicts))
+    result: dict[K, list[V]] = {}
+    for key in keys:
+        values = list(map(lambda x: x[key], filter(lambda x: key in x, dicts)))
+        if len(values) > 1 and not all(map(lambda x: x == values[0], values)):
+            result[key] = values
+    return result
+
+
+def getOverloadedFunctionReturnTypeAndVariables(
+    module: object, depth: int = 1
+) -> tuple[Any, dict[str, Any]]:
+    ref = getFunctionRef(module, depth + 1)
+    kwargs = getFunctionVariables(depth + 1)
+    overloads = get_overloads(ref)
+    if len(overloads) == 0:
+        return ref.__annotations__["return"], kwargs
+    elif len(overloads) == 1:
+        return overloads[0].__annotations__["return"], kwargs
+    overloadsDiffDict = dictsDiff(list(map(lambda x: x.__annotations__, overloads)))
+    overloadsDiff = [
+        {k: v for k, v in zip(overloadsDiffDict.keys(), vals) if k != "return"}
+        for vals in zip(*overloadsDiffDict.values())
+    ]
+    kwargsTypes = {
+        k: type(v) if v is not None else None for k, v in kwargs.items() if k != "self"
+    }
+    for i, overloadDiff in enumerate(overloadsDiff):
+        success = True
+        for k, v in overloadDiff.items():
+            if kwargsTypes[k] != v:
+                success = False
+        if success:
+            return overloadsDiffDict["return"][i], kwargs
+    raise RuntimeError(
+        f'Unable to find overload return type for function "{ref.__name__}"'
+    )

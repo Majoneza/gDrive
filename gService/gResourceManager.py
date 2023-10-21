@@ -9,9 +9,10 @@ from googleapiclient.http import (
 from io import BufferedWriter
 from .utils import (
     object2dict,
+    removeNonesDict,
     getFunctionName,
     getFunctionVariables,
-    getFunctionReturnType,
+    getOverloadedFunctionReturnTypeAndVariables,
 )
 from typing import Any, cast, Dict, Literal, Generator, Self
 from types import TracebackType
@@ -48,14 +49,15 @@ class gResourceManager:
             elif type(v) is datetime.datetime:
                 kwargs[k] = v.isoformat()
 
+    @classmethod
     def _prepareKwargs(
-        self,
+        cls,
         kwargs: dict[str, Any],
         body: str | None,
     ) -> None:
-        self._convertKwargs(kwargs)
+        cls._convertKwargs(kwargs)
         if body is not None:
-            self._moveToKwargsBody(kwargs, body)
+            cls._moveToKwargsBody(kwargs, body)
         del kwargs["self"]
 
     def _getRawResource(self, depth: int = 1):
@@ -68,8 +70,10 @@ class gResourceManager:
         body: str | None = None,
         depth: int = 1,
     ) -> Any:
-        variableClass = getFunctionReturnType(self, depth + 1)
-        kwargs = getFunctionVariables(depth + 1)
+        variableClass, kwargs = getOverloadedFunctionReturnTypeAndVariables(
+            self, depth + 1
+        )
+        kwargs = removeNonesDict(kwargs)
         self._prepareKwargs(kwargs, body)
         resource = self._getRawResource(depth + 1)
         if executionPolicy == "checkForErrors":
@@ -88,8 +92,10 @@ class gResourceManager:
         body: str | None = None,
         depth: int = 1,
     ) -> Any:
-        variableClass = getFunctionReturnType(self, depth + 1)
-        kwargs = getFunctionVariables(depth + 1)
+        variableClass, kwargs = getOverloadedFunctionReturnTypeAndVariables(
+            self, depth + 1
+        )
+        kwargs = removeNonesDict(kwargs)
         filePath: str = kwargs[filePathKey]
         resumable: bool = kwargs[resumableKey]
         del kwargs[filePathKey]
@@ -106,7 +112,7 @@ class gResourceManager:
         body: str | None = None,
         depth: int = 1,
     ):
-        kwargs = getFunctionVariables(depth + 1)
+        kwargs = removeNonesDict(getFunctionVariables(depth + 1))
         fd: BufferedWriter = kwargs[fdKey]
         del kwargs[fdKey]
         self._prepareKwargs(kwargs, body)
