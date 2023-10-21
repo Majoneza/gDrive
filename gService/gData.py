@@ -1,7 +1,7 @@
 from .gResource import gResource
 from itertools import chain, count
 from abc import abstractmethod
-from .utils import mergeDicts
+from .utils import mergeDicts, swapDict, isSubclassOrigin
 from typing import (
     Any,
     cast,
@@ -23,16 +23,52 @@ class gDataclassMetaclass(type):
 
 
 class gDataclass(metaclass=gDataclassMetaclass):
+    @classmethod
+    def allFields(cls, depth: int = 0) -> Self:
+        if depth == 0:
+            return cls(*cls.__annotations__.keys())
+        result = {}
+        for k, v in cls.__annotations__.items():
+            if isSubclassOrigin(v, gDataclass):
+                result[k] = cast(gDataclass, v).allFields(depth - 1)
+            else:
+                result[k] = v()
+        return cls(**result)
+
     def getFields(self, *fields: Any) -> Self:
         raise NotImplementedError()
 
-    def __init__(self, *args: Tuple[Any, Any], **kwargs: Any) -> None:
+    def __init__(self, *args: Tuple[Any, Any] | Any, **kwargs: Any) -> None:
         super().__init__()
+        if len(args) > 0:
+            result: list[tuple[Any, Any]] = []
+            swapped_annotations = swapDict(self.__annotations__)
+            for arg in args:
+                if isinstance(arg, gDataclass):
+                    argType = type(arg)
+                    if argType not in swapped_annotations:
+                        raise ValueError(f"Unable to find field with type \"{argType.__name__}\"")
+                    name = swapped_annotations[argType]
+                    result.append((name, arg))
+                elif type(arg) is str:
+                    if arg not in self.__annotations__:
+                        raise ValueError(f"Unable to find field with name \"{arg}\"")
+                    default_value = self.__annotations__[arg]()
+                    result.append((arg, default_value))
+                elif type(arg) is tuple:
+                    result.append(cast(tuple[Any, Any], arg))
+                else:
+                    raise TypeError(f"Invalid argument type: {type(arg).__name__}")
+            args = tuple(result)
         for k, v in chain(args, kwargs.items()):
             if k not in self.__annotations__:
                 raise ValueError(f"Invalid variable name: {k}")
-            if type(v) is not self.__annotations__[k]:
-                raise TypeError(f"Invalid type: {type(v).__name__}, of variable '{k}'")
+            if type(v) is not self.__annotations__[k] and type(v) is not get_origin(
+                self.__annotations__[k]
+            ):
+                raise TypeError(
+                    f"Invalid type: {type(v).__name__}, of variable '{k}', required type: {self.__annotations__[k].__name__}"
+                )
             setattr(self, k, v)
 
 
@@ -110,7 +146,7 @@ class gBaseData(Generic[T]):
         for k, v in self._getVariableItemTypes().items():
             origin = get_origin(v)
             if origin is not None:
-                if origin is gList or origin is gDict:
+                if origin is gList:
                     itemType = get_args(v)[0]
                     if not issubclass(itemType, gDataclass):
                         continue
@@ -137,35 +173,41 @@ class gBaseData(Generic[T]):
     def _hasVariableAttribute(self, name: str) -> bool:
         return name in self._variableClass.__annotations__
 
-    def _hasAttributeUnchecked(self, name: str) -> bool:
+    def _hasAttribute(self, name: str) -> bool:
         return name in self.__dict__
 
     def _getAttributeUnchecked(self, name: str) -> Any:
         return self.__dict__[name]
 
     def _getAttributeWrapperSafe(self, name: str) -> Union["gBaseData[T]", None]:
-        if name in self.__dict__:
-            variable = self.__dict__[name]
+        if self._hasAttribute(name):
+            variable = self._getAttributeUnchecked(name)
             if isinstance(variable, gBaseData):
                 return cast(gBaseData[Any], variable)
         return None
 
-    def _getMissingFields(self, fields: Iterable[Any]) -> list[Any]:
-        for field in fields:
-            if not self._hasVariableAttribute(field):
-                raise ValueError(f"Invalid field name: {field}")
-        return [field for field in fields if not self._hasAttributeUnchecked(field)]
+    def _getMissingFields(self, fields: tuple[Any, ...]) -> FieldsDict:
+        return self.getMissingFields(self._variableClass(*fields))
 
-    def getFieldNames(self, fields: Iterable[str] | None = None) -> FieldsDict:
+    def getMissingFields(self, comparison: gDataclass) -> FieldsDict:
         result: FieldDictStr = {}
-        if fields is None:
-            fields = self._getVariableItemTypes().keys()
-        for field in fields:
-            variable = self._getAttributeWrapperSafe(field)
-            if variable is not None:
-                result[field] = variable.getFieldNames()
-                continue
-            result[field] = None
+        for field in comparison.__dict__:
+            if not self._hasVariableAttribute(field):
+                raise ValueError(
+                    f'Invalid field name "{field}" for class "{self._variableClass.__name__}"'
+                )
+            value = getattr(comparison, field)
+            if isinstance(value, gDataclass):
+                gBaseDataVariable = self._getAttributeWrapperSafe(field)
+                if gBaseDataVariable is None:
+                    raise ValueError(
+                        f'Unable to find attribute with name "{field}" for class "{self._variableClass.__name__}"'
+                    )
+                missingFields = gBaseDataVariable.getMissingFields(value)
+                if len(missingFields) > 0:
+                    result[field] = missingFields
+            elif not self._hasAttribute(field):
+                result[field] = None
         return result
 
 
@@ -174,7 +216,7 @@ class gBaseObjectData(Generic[T], gBaseData[T], gDataclass):
         if not self._hasVariableAttribute(name):
             raise AttributeError()
         self.getFieldsDict({name: None})
-        if not self._hasAttributeUnchecked(name):
+        if not self._hasAttribute(name):
             raise RuntimeError(f"Unable to fetch requested resource: {name}")
         return self._getAttributeUnchecked(name)
 
@@ -192,8 +234,8 @@ class gBaseObjectData(Generic[T], gBaseData[T], gDataclass):
 
     def getFields(self, *fields: Any) -> Self:
         missingFields = self._getMissingFields(fields)
-        if len(missingFields) != 0:
-            self.getFieldsDict(self.getFieldNames(missingFields))
+        if len(missingFields) > 0:
+            self.getFieldsDict(missingFields)
         return self
 
 
@@ -243,7 +285,7 @@ class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
         if not isinstance(obj, self._variableClass):
             return False
         if not self._hasData:
-            self.getFieldsDict(self.getFieldNames())
+            self.getFieldsDict(self.getMissingFields(self._variableClass.allFields()))
         return obj in self._items.values()
 
     def __len__(self) -> int:
@@ -266,8 +308,8 @@ class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
 
     def getFields(self, *fields: Any) -> Self:
         missingFields = self._getMissingFields(fields)
-        if len(missingFields) != 0:
-            self.getFieldsDict({None: self.getFieldNames(missingFields)})
+        if len(missingFields) > 0:
+            self.getFieldsDict({None: missingFields})
         return self
 
 

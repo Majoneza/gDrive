@@ -1,7 +1,20 @@
 import inspect
-from typing import Any, Callable, cast, Dict, List, Iterable, Optional, TypeVar, Type
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    List,
+    Iterable,
+    Optional,
+    TypeVar,
+    Type,
+    get_origin,
+)
 
 T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
 
 
 class Object(object):
@@ -141,7 +154,7 @@ def mergeDicts(dicts: Iterable[dict[Any, Any]]) -> dict[Any, Any]:
             if type(v) is dict:
                 if k not in result:
                     result[k] = []
-                result[k].append(v)
+                cast(list[Any], result[k]).append(v)
             else:
                 if k in result:
                     raise RuntimeError(f"Unable to merge dicts, failed on key: {k}")
@@ -150,3 +163,16 @@ def mergeDicts(dicts: Iterable[dict[Any, Any]]) -> dict[Any, Any]:
         if type(v) is list:
             result[k] = mergeDicts(cast(list[Any], v))
     return result
+
+
+def swapDict(d: dict[K, V]) -> dict[V, K]:
+    values = list(d.values())
+    return dict((v, k) for k, v in d.items() if values.count(v) == 1)
+
+
+def isSubclassOrigin(some_type: type, real_class: type):
+    origin = get_origin(some_type)
+    if origin is not None:
+        return issubclass(origin, real_class)
+    else:
+        return issubclass(some_type, real_class)
