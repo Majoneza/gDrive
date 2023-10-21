@@ -185,9 +185,11 @@ class gBaseData(Generic[T]):
             if isinstance(variable, gBaseData):
                 return cast(gBaseData[Any], variable)
         return None
-
-    def _getMissingFields(self, fields: tuple[Any, ...]) -> FieldsDict:
-        return self.getMissingFields(self._variableClass(*fields))
+    
+    def _processFields(self, fields: Tuple[Any, ...]) -> gDataclass:
+        if len(fields) == 0:
+            return self._variableClass.allFields()
+        return self._variableClass(*fields)
 
     def getMissingFields(self, comparison: gDataclass) -> FieldsDict:
         result: FieldDictStr = {}
@@ -233,7 +235,7 @@ class gBaseObjectData(Generic[T], gBaseData[T], gDataclass):
             setattr(self, k, v)
 
     def getFields(self, *fields: Any) -> Self:
-        missingFields = self._getMissingFields(fields)
+        missingFields = self.getMissingFields(self._processFields(fields))
         if len(missingFields) > 0:
             self.getFieldsDict(missingFields)
         return self
@@ -285,7 +287,7 @@ class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
         if not isinstance(obj, self._variableClass):
             return False
         if not self._hasData:
-            self.getFieldsDict(self.getMissingFields(self._variableClass.allFields()))
+            self.getFields()
         return obj in self._items.values()
 
     def __len__(self) -> int:
@@ -307,7 +309,7 @@ class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
         self._previous.getFieldsDict({self._variableName: fields})
 
     def getFields(self, *fields: Any) -> Self:
-        missingFields = self._getMissingFields(fields)
+        missingFields = self.getMissingFields(self._processFields(fields))
         if len(missingFields) > 0:
             self.getFieldsDict({None: missingFields})
         return self
