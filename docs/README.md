@@ -18,7 +18,7 @@ Let's take for example adding a file `myfile.mp4` from the current directory to 
 from gDrive import gDrive, gCredentials, Scopes
 from gDrive.data import File
 
-c = gCredentials([Scopes.Drive]).acquireCredentials()
+c = gCredentials([Scopes.Drive]).oauth2()
 with gDrive(c) as drive:
     file_metadata_1 = File(
         name="video.mp4", description="This is the description of the video file"
@@ -40,7 +40,7 @@ The code also tries to demonstrate the two ways of creating gDrive.data entities
 from gDrive import gDrive, gCredentials, Scopes
 from gDrive.data import File
 
-c = gCredentials([Scopes.Drive]).acquireCredentials()
+c = gCredentials([Scopes.Drive]).oauth2()
 with gDrive(c) as drive:
     file = drive.files.create(
         "./myfile.mp4",
@@ -114,7 +114,7 @@ The first example will have 3 API calls in total first requesting all files with
 ```python
 from gDrive import gDrive, gCredentials, Scopes, fq
 
-c = gCredentials([Scopes.DriveReadonly]).acquireCredentials()
+c = gCredentials([Scopes.DriveReadonly]).oauth2()
 with gDrive(c) as drive:
     for file in drive.files.list(q=fq().parents.Include("root"), orderBy=['name']).files:
         print(file.id)
@@ -128,7 +128,7 @@ The second example uses the `getFields` method which is why we will have only a 
 ```python
 from gDrive import gDrive, gCredentials, Scopes, fq
 
-c = gCredentials([Scopes.DriveReadonly]).acquireCredentials()
+c = gCredentials([Scopes.DriveReadonly]).oauth2()
 with gDrive(c) as drive:
     for file in drive.files.list(q=fq().parents.Include("root"), orderBy=['name']).files.getFields(File.id, File.name, File.fileExtension):
         print(file.id)
