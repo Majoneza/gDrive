@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gDrive_Majoneza"
+version = "0.0.1"
+authors = [
+  { name="Majoneza", email="author@example.com" },
+]
+description = "Library to manage your Google Drive for Python programming language"
+readme = "README.md"
+license = {file = 'LICENSE'}
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "google-api-python-client>=2.97.0",
+    "google-auth-oauthlib>=1.1.0",
+    "google-auth>=2.27.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["gService", "gDrive"]
+
+[project.optional-dependencies]
+crypto = ["pycryptodome>=3.18.0"]
