@@ -1,3 +1,4 @@
-google-api-python-client==2.97.0
-google-auth-oauthlib==1.1.0
-pycryptodome==3.18.0
+google-api-python-client>=2.97.0
+google-auth-oauthlib>=1.1.0
+google-auth>=2.27.0
+pycryptodome>=3.18.0
