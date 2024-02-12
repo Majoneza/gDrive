@@ -204,7 +204,7 @@ class _gCredentialsRefreshUrl(_gCredentialsRefresh):
     def __init__(
         self,
         c: gCredentials,
-        get_credentials: Callable[[Any, Sequence[str]], RefreshCredentials],
+        get_credentials: Callable[[Any, Sequence[str]], _RefreshCredentials],
         url_callback: Callable[[str], str],
         credentials_path: str,
         token_path: str,

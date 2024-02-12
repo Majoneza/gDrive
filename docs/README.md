@@ -34,7 +34,7 @@ with gDrive(c) as drive:
 
 There is quite a bit of code there but the biggest focus should be on the last two lines. Because `files.create` changes drive state we had to be very careful when trying to get the fields of the response. Here we only needed the field `id` of the response file metadata so we could just write `file.id` and the library would make the API call `files.create` with the requested field `id`. If we required more, let's say the field `createdTime` we can't write `file.createdTime` because that would mean another API call which would attempt to add another file to the drive. In situations like these we use the method `getFields`.
 
-The code also tries to demonstrate the two ways of creating gDrive.data entities(here the entity being `File`) which is why it is so verbose. First way is more concise but also more error prone because it requires the user to remember field names. In the second way if the entity's data structure ever changes the code will become invalid to the type checker which will make the debugging experience much less painful.
+> **NOTE**: The code also tries to demonstrate the two ways of creating gDrive.data entities(here the entity being `File`) which is why it is so verbose. First way is more concise but also more error prone because it requires the user to remember field names. In the second way if the entity's data structure ever changes the code will become invalid to the type checker which will make the debugging experience much less painful.
 
 ```python
 from gDrive import gDrive, gCredentials, Scopes
@@ -136,7 +136,7 @@ with gDrive(c) as drive:
         print(file.fileExtension)
 ```
 
-Finally, those with a keen eye will have observed that we are using an unknown class `fq`. The class helpes create file queries with the help of the type system. `files.list`'s method parameter `q` also accept a string as an argument so instead of using the `fq` class we could've written the same as "'root' in parents". For more information about queries check the [Detailed guides](#detailed-guides).
+Finally, those with a keen eye would have observed that we are using an unknown class `fq`. The class helpes create file queries with the help of the type system. `files.list`'s method parameter `q` also accept a string as an argument so instead of using the `fq` class we could've written the same as "'root' in parents". For more information about queries check the [Detailed guides](#detailed-guides).
 
 
 ## Detailed guides

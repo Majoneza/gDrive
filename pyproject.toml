@@ -18,13 +18,13 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "google-api-python-client>=2.97.0",
-    "google-auth-oauthlib>=1.1.0",
-    "google-auth>=2.27.0",
+    "google-api-python-client",
+    "google-auth-oauthlib",
+    "google-auth",
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = ["gService", "gDrive"]
 
 [project.optional-dependencies]
-crypto = ["pycryptodome>=3.18.0"]
+crypto = ["pycryptodome"]

@@ -47,12 +47,14 @@ class gDataclass(metaclass=gDataclassMetaclass):
                 if isinstance(arg, gDataclass):
                     argType = type(arg)
                     if argType not in swapped_annotations:
-                        raise ValueError(f"Unable to find field with type \"{argType.__name__}\"")
+                        raise ValueError(
+                            f'Unable to find field with type "{argType.__name__}"'
+                        )
                     name = swapped_annotations[argType]
                     result.append((name, arg))
                 elif type(arg) is str:
                     if arg not in self.__annotations__:
-                        raise ValueError(f"Unable to find field with name \"{arg}\"")
+                        raise ValueError(f'Unable to find field with name "{arg}"')
                     default_value = self.__annotations__[arg]()
                     result.append((arg, default_value))
                 elif type(arg) is tuple:
@@ -79,38 +81,30 @@ V = TypeVar("V", bound=gDataclass)
 
 class gList(gDataclass, Generic[T]):
     @abstractmethod
-    def __contains__(self, obj: object) -> bool:
-        ...
+    def __contains__(self, obj: object) -> bool: ...
 
     @abstractmethod
-    def __len__(self) -> int:
-        ...
+    def __len__(self) -> int: ...
 
     @abstractmethod
-    def __getitem__(self, index: int) -> T:
-        ...
+    def __getitem__(self, index: int) -> T: ...
 
 
 class gDict(gDataclass, Generic[K, V]):
     @abstractmethod
-    def __contains__(self, key: object) -> bool:
-        ...
+    def __contains__(self, key: object) -> bool: ...
 
     @abstractmethod
-    def __len__(self) -> int:
-        ...
+    def __len__(self) -> int: ...
 
     @abstractmethod
-    def __getitem__(self, key: K) -> V:
-        ...
+    def __getitem__(self, key: K) -> V: ...
 
     @abstractmethod
-    def keys(self) -> list[K]:
-        ...
+    def keys(self) -> list[K]: ...
 
     @abstractmethod
-    def values(self) -> list[V]:
-        ...
+    def values(self) -> list[V]: ...
 
     def get(self, key: K, default: V) -> V:
         if key not in self:
@@ -129,12 +123,10 @@ FieldsDict = FieldDictStr | FieldDictInt | FieldDictNone
 
 class gBaseData(Generic[T]):
     @abstractmethod
-    def setData(self, data: Any) -> None:
-        ...
+    def setData(self, data: Any) -> None: ...
 
     @abstractmethod
-    def getFieldsDict(self, fields: FieldsDict | None) -> None:
-        ...
+    def getFieldsDict(self, fields: FieldsDict | None) -> None: ...
 
     def __init__(self, variableName: str, variableClass: Type[T]) -> None:
         super().__init__()
@@ -185,7 +177,7 @@ class gBaseData(Generic[T]):
             if isinstance(variable, gBaseData):
                 return cast(gBaseData[Any], variable)
         return None
-    
+
     def _processFields(self, fields: Tuple[Any, ...]) -> gDataclass:
         if len(fields) == 0:
             return self._variableClass.allFields()
@@ -214,6 +206,20 @@ class gBaseData(Generic[T]):
 
 
 class gBaseObjectData(Generic[T], gBaseData[T], gDataclass):
+    def __repr__(self) -> str:
+        return (
+            self._variableClass.__qualname__
+            + "("
+            + ", ".join(
+                [
+                    k + "=" + repr(self._getAttributeUnchecked(k))
+                    for k in self._getVariableItemTypes()
+                    if self._hasAttribute(k)
+                ]
+            )
+            + ")"
+        )
+
     def __getattr__(self, name: str) -> Any:
         if not self._hasVariableAttribute(name):
             raise AttributeError()
@@ -272,8 +278,7 @@ class gDictItemData(Generic[K, V], gBaseObjectData[V]):
 
 class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
     @abstractmethod
-    def _setData(self, data: Any) -> None:
-        ...
+    def _setData(self, data: Any) -> None: ...
 
     def __init__(
         self, valueName: str, valueClass: Type[V], previous: gBaseData[Any]
@@ -316,17 +321,25 @@ class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
 
 
 class gListData(Generic[T], gBaseDictData[int, T]):
+    def __repr__(self) -> str:
+        return (
+            self._variableClass.__qualname__
+            + "["
+            + ", ".join([repr(v) for v in self._items.values()])
+            + "]"
+        )
+
+    def __getitem__(self, index: int) -> gDictItemData[int, T]:
+        if self._hasData and index >= len(self):
+            raise IndexError()
+        return self._getItem(index)
+
     def _getItem(self, index: int) -> gDictItemData[int, T]:
         if index not in self._items:
             self._items[index] = gDictItemData(
                 self._variableName, self._variableClass, self, index
             )
         return self._items[index]
-
-    def __getitem__(self, index: int) -> gDictItemData[int, T]:
-        if self._hasData and index >= len(self):
-            raise IndexError()
-        return self._getItem(index)
 
     def _setData(self, data: Any) -> None:
         if type(data) is not list:
@@ -338,15 +351,23 @@ class gListData(Generic[T], gBaseDictData[int, T]):
 
 
 class gDictData(Generic[K, V], gBaseDictData[K, V]):
+    def __repr__(self) -> str:
+        return (
+            self._variableClass.__qualname__
+            + "{"
+            + ", ".join([repr(k) + ": " + repr(v) for k, v in self._items.items()])
+            + "}"
+        )
+
+    def __getitem__(self, key: K) -> gDictItemData[K, V]:
+        return self._getItem(key)
+
     def _getItem(self, key: K) -> gDictItemData[K, V]:
         if not self._hasData:
             self.getFieldsDict(None)
         if key not in self._items:
             raise KeyError()
         return self._items[key]
-
-    def __getitem__(self, key: K) -> gDictItemData[K, V]:
-        return self._getItem(key)
 
     def _setData(self, data: Any) -> None:
         if type(data) is not dict:

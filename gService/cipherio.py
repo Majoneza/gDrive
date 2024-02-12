@@ -90,7 +90,7 @@ class CBinaryIO(BytesIO):
         password: str | None = None,
         salt: bytes | None = None,
         key: bytes | None = None,
-        plain: bool = False
+        plain: bool = False,
     ):
         if password is None and key is None:
             raise ValueError("Password or key have to be set")
