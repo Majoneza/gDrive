@@ -30,8 +30,11 @@ class gCredentials:
         return self._scopes
 
     def default(self) -> tuple[gCredentials, Optional[str]]:
-        credentials, project_id = google.auth.default(self._scopes)
+        credentials, project_id = google.auth.default(scopes=self._scopes)
         return _gCredentials(self, cast(Any, credentials)), cast(Any, project_id)
+    
+    def credentials(self, credentials: Credentials) -> gCredentials:
+        return _gCredentials(self, credentials)
 
     def api_key(self, key: str) -> gCredentials:
         return _gCredentialsApiKey(self, key)
@@ -119,7 +122,7 @@ class _gCredentialsFile(gCredentials):
         return self._credentials
 
 
-RefreshCredentials = OAuth2Credentials
+_RefreshCredentials = OAuth2Credentials
 
 
 class _gCredentialsRefresh(gCredentials):
@@ -130,7 +133,7 @@ class _gCredentialsRefresh(gCredentials):
     def __init__(
         self,
         c: gCredentials,
-        get_credentials: Callable[[Any, Sequence[str]], RefreshCredentials],
+        get_credentials: Callable[[Any, Sequence[str]], _RefreshCredentials],
         credentials_path: str,
         token_path: str,
     ):
@@ -152,12 +155,12 @@ class _gCredentialsRefresh(gCredentials):
         path = self._get_file_path(file)
         return open(path, mode + "b")
 
-    def _save_credentials_to_file(self, credentials: RefreshCredentials) -> None:
+    def _save_credentials_to_file(self, credentials: _RefreshCredentials) -> None:
         with self._open_file("token", "w") as file:
             file.write(credentials.to_json().encode())
 
     @staticmethod
-    def _update_credentials(credentials: RefreshCredentials) -> bool:
+    def _update_credentials(credentials: _RefreshCredentials) -> bool:
         if credentials.valid:
             return True
         if credentials.expired:
@@ -165,7 +168,7 @@ class _gCredentialsRefresh(gCredentials):
         return credentials.valid
 
     def _try_load(
-        self, get_credentials: Callable[[Any, Sequence[str]], RefreshCredentials]
+        self, get_credentials: Callable[[Any, Sequence[str]], _RefreshCredentials]
     ):
         if os.path.exists(self._token_path):
             with self._open_file("token", "r") as file:
@@ -174,7 +177,7 @@ class _gCredentialsRefresh(gCredentials):
                 return c
         return None
 
-    def _change_credentials(self, credentails: RefreshCredentials):
+    def _change_credentials(self, credentails: _RefreshCredentials):
         self._save_credentials_to_file(credentails)
         if self._update_credentials(credentails):
             return credentails
@@ -186,7 +189,7 @@ class _gCredentialsRefresh(gCredentials):
             credentials = flow.run_local_server()
         return self._change_credentials(credentials)
 
-    def getStoredCredentials(self) -> RefreshCredentials | None:
+    def getStoredCredentials(self) -> _RefreshCredentials | None:
         if self._stored_credentials is not None:
             if not self._update_credentials(self._stored_credentials):
                 self._stored_credentials = self._fetch_credentials()

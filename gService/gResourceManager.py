@@ -60,9 +60,9 @@ class gResourceManager:
             cls._moveToKwargsBody(kwargs, body)
         del kwargs["self"]
 
-    def _getRawResource(self, depth: int = 1):
+    def _getRawResource(self, depth: int = 1, suffix: str = ""):
         name = getFunctionName(depth + 1)
-        return getattr(self._resource, name)
+        return getattr(self._resource, name + suffix)
 
     def _getResource(
         self,
@@ -116,7 +116,7 @@ class gResourceManager:
         fd: BufferedWriter = kwargs[fdKey]
         del kwargs[fdKey]
         self._prepareKwargs(kwargs, body)
-        resource = self._getRawResource(depth + 1)
+        resource = self._getRawResource(depth + 1, suffix="_media")
         return self._downloadMedia(fd, resource(**kwargs))
 
     def __enter__(self) -> Self:
