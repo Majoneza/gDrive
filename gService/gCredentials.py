@@ -65,27 +65,13 @@ class gCredentials:
     def service_account(
         self,
         credentials_path: str = "credentials.json",
-        token_path: str = "token.json",
     ) -> gCredentials:
-        return _gCredentialsRefresh(
+        return _gCredentialsFile(
             self,
-            ServiceAccountCredentials.from_service_account_file,
+            lambda data, scopes: ServiceAccountCredentials.from_service_account_info(
+                data, scopes=scopes
+            ),
             credentials_path,
-            token_path,
-        )
-
-    def service_account_url(
-        self,
-        url_callback: Callable[[str], str],
-        credentials_path: str = "credentials.json",
-        token_path: str = "token.json",
-    ) -> gCredentials:
-        return _gCredentialsRefreshUrl(
-            self,
-            ServiceAccountCredentials.from_service_account_file,
-            url_callback,
-            credentials_path,
-            token_path,
         )
 
 
@@ -111,13 +97,35 @@ class _gCredentialsApiKey(gCredentials):
         return self._key
 
 
-RefreshCredentials = ServiceAccountCredentials | OAuth2Credentials
+class _gCredentialsFile(gCredentials):
+    _credentials_path: str
+    _credentials: Credentials
+
+    def __init__(
+        self,
+        c: gCredentials,
+        get_credentials: Callable[[Any, Sequence[str]], Credentials],
+        credentials_path: str,
+    ):
+        super().__init__(c._scopes)
+        self._credentials_path = credentials_path
+        with self._open_file("r") as file:
+            self._credentials = get_credentials(json.load(file), c._scopes)
+
+    def _open_file(self, mode: Literal["r", "w"]):
+        return open(self._credentials_path, mode + "b")
+
+    def getStoredCredentials(self) -> Credentials | None:
+        return self._credentials
+
+
+RefreshCredentials = OAuth2Credentials
 
 
 class _gCredentialsRefresh(gCredentials):
     _credentials_path: str
     _token_path: str
-    _stored_credentials: RefreshCredentials | None
+    _stored_credentials: OAuth2Credentials | None
 
     def __init__(
         self,
