@@ -6,7 +6,7 @@ Official documentation of the gDrive library.
 
 ## Basic guide
 
-Before starting the guide make sure to get [OAuth client ID credentials](https://developers.google.com/workspace/guides/create-credentials) and save the file as `credentials.json` inside the directory of the script using `gCredentials`. Okay, let's begin.
+Before starting the guide make sure to get [OAuth client ID credentials](https://developers.google.com/workspace/guides/create-credentials) and save the file as `credentials.json` inside the directory of the script using the library. Okay let's begin.
 
 The most important thing to have in mind when working with this library is that every API call is **`lazy`**. Because of that some library usages have to be carefully programmed. For example when we are listing files(`files.list`) we can make as many API calls as we want because listing doesn't change the state of the drive, but the same isn't true for creating files(`files.create`).
 
