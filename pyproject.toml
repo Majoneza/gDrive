@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gDrive_Majoneza"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="Majoneza", email="author@example.com" },
 ]
 description = "Library to manage your Google Drive for Python programming language"
 readme = "README.md"
 license = {file = 'LICENSE'}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

@@ -131,5 +131,5 @@ class gResourceManager:
     ) -> None:
         self._resource.__exit__(exc_type, exc_val, exc_tb)
 
-    def close(self) -> None:
+    def Close(self) -> None:
         self._resource.close()

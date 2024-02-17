@@ -2,11 +2,11 @@ from gService.gResourceManager import gResourceManager
 import os
 from .data import Channel, Files, File
 from .data.helpers import IncludePermissionsForView, Space
-from .utils import splitPath
+from .utils import FolderMimeType, processDrivePath
 from .query import BridgeTerm, FileQueryTerm as fq
 from googleapiclient.http import MediaDownloadProgress
 from io import BufferedWriter
-from typing import Any, List, Literal, Generator, overload
+from typing import Any, List, Literal, Generator, overload, Union
 
 
 GenerateIdsType = Literal["files", "shortcuts"]
@@ -23,6 +23,7 @@ ListOrderByItems = Literal[
     "starred",
     "viewedByMeTime",
 ]
+TreeResult = dict[tuple[str, str], Union["TreeResult", None]]
 
 
 class gDriveFiles(gResourceManager):
@@ -84,8 +85,7 @@ class gDriveFiles(gResourceManager):
         supportsAllDrives: bool | None = None,
         includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
-    ) -> Generator[MediaDownloadProgress, Any, None]:
-        ...
+    ) -> Generator[MediaDownloadProgress, Any, None]: ...
 
     @overload
     def get(
@@ -96,8 +96,7 @@ class gDriveFiles(gResourceManager):
         supportsAllDrives: bool | None = None,
         includePermissionsForView: IncludePermissionsForView | None = None,
         includeLabels: List[str] | None = None,
-    ) -> File:
-        ...
+    ) -> File: ...
 
     def get(
         self,
@@ -171,12 +170,11 @@ class gDriveFiles(gResourceManager):
     ) -> Channel:
         return self._getResource("executeOnlyOnce", body="channel")
 
-    def GetPathId(self, path: str) -> str:
-        parts = splitPath(path)
-        fileId = "root"
+    def GetDrivePathId(self, drivePath: str) -> str:
+        fileId, parts = processDrivePath(drivePath)
         for part in parts:
             query = fq().name.Eq(part) & fq().parents.Include(fileId)
-            files = self.list(q=query).files
+            files = self.list(q=query).files.getFields(File.id)
             if len(files) != 1:
                 raise ValueError(
                     "Found multiple files with given name"
@@ -186,40 +184,95 @@ class gDriveFiles(gResourceManager):
             fileId = files[0].id
         return fileId
 
+    def TreeId(self, folderId: str) -> TreeResult:
+        query = fq().parents.Include(folderId)
+        files = self.list(q=query).files.getFields(File.id, File.name, File.mimeType)
+        result: TreeResult = {}
+        for file in files:
+            key = (file.id, file.name)
+            if file.mimeType == FolderMimeType:
+                result[key] = self.TreeId(file.id)
+            else:
+                result[key] = None
+        return result
+
+    def Tree(self, drivePath: str) -> TreeResult:
+        folderId = self.GetDrivePathId(drivePath)
+        return self.TreeId(folderId)
+
     def Delete(
         self,
-        path: str,
+        drivePath: str,
         supportsAllDrives: bool | None = None,
     ) -> None:
-        fileId = self.GetPathId(path)
+        fileId = self.GetDrivePathId(drivePath)
         return self.delete(fileId, supportsAllDrives)
 
-    def Download(
+    def DownloadId(
         self,
-        drivePath: str,
+        fileId: str,
         localPath: str | None = None,
+        acknowledgeAbuse: bool | None = None,
+        supportsAllDrives: bool | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
+        includeLabels: List[str] | None = None,
     ):
-        fileId = self.GetPathId(drivePath)
         if localPath is not None:
             if os.path.isdir(localPath):
-                name = self.get(fileId).name
-                path = os.path.join(localPath, name)
+                path = os.path.join(localPath, self.get(fileId).name)
             else:
                 path = localPath
         else:
             path = self.get(fileId).name
         with open(path, "xb") as file:
-            return self.get(fileId, file)
+            getGenerator = self.get(
+                fileId,
+                file,
+                acknowledgeAbuse,
+                supportsAllDrives,
+                includePermissionsForView,
+                includeLabels,
+            )
+            for progress in getGenerator:
+                yield progress
 
-    def Upload(self, localPath: str, drivePath: str | None = None):
-        if drivePath is None:
-            file_metadata = File(name=os.path.basename(localPath))
+    def Download(
+        self,
+        drivePath: str,
+        localPath: str | None = None,
+        acknowledgeAbuse: bool | None = None,
+        supportsAllDrives: bool | None = None,
+        includePermissionsForView: IncludePermissionsForView | None = None,
+        includeLabels: List[str] | None = None,
+    ):
+        fileId = self.GetDrivePathId(drivePath)
+        return self.DownloadId(
+            fileId,
+            localPath,
+            acknowledgeAbuse,
+            supportsAllDrives,
+            includePermissionsForView,
+            includeLabels,
+        )
+
+    def _DownloadTree(self, tree: TreeResult, localFolderPath: str):
+        result: list[tuple[str, Generator[MediaDownloadProgress, Any, None]]] = []
+        for key, value in tree.items():
+            path = os.path.join(localFolderPath, key[1])
+            if value is None:
+                result.append((key[1], self.DownloadId(key[0], path)))
+            else:
+                os.mkdir(path)
+                result.extend(self._DownloadTree(value, path))
+        return result
+
+    def DownloadFolderId(self, folderId: str, localPath: str | None = None):
+        if localPath is not None:
+            if not os.path.isdir(localPath):
+                os.makedirs(localPath)
         else:
-            try:
-                folderId = self.GetPathId(os.path.dirname(drivePath))
-                name = os.path.basename(drivePath)
-            except ValueError:
-                folderId = self.GetPathId(drivePath)
-                name = os.path.basename(localPath)
-            file_metadata = File(name=name, parents=[folderId])
-        return self.create(localPath, file_metadata)
+            localPath = os.curdir
+        return self._DownloadTree(self.TreeId(folderId), localPath)
+
+    def DownloadFolder(self, drivePath: str, localPath: str | None = None):
+        return self.DownloadFolderId(self.GetDrivePathId(drivePath), localPath)

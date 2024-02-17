@@ -32,9 +32,9 @@ class gCredentials:
     def default(self) -> tuple[gCredentials, Optional[str]]:
         credentials, project_id = google.auth.default(scopes=self._scopes)
         return _gCredentials(self, cast(Any, credentials)), cast(Any, project_id)
-    
+
     def credentials(self, credentials: Credentials) -> gCredentials:
-        return _gCredentials(self, credentials)
+        return _gCredentialsCredentials(self, credentials)
 
     def api_key(self, key: str) -> gCredentials:
         return _gCredentialsApiKey(self, key)
@@ -79,28 +79,33 @@ class gCredentials:
 
 
 class _gCredentials(gCredentials):
+    def __init__(self, c: gCredentials):
+        super().__init__(c._scopes)
+
+
+class _gCredentialsCredentials(_gCredentials):
     _credentials: Credentials
 
     def __init__(self, c: gCredentials, credentials: Credentials):
-        super().__init__(c._scopes)
+        super().__init__(c)
         self._credentials = credentials
 
     def getStoredCredentials(self) -> Credentials | None:
         return self._credentials
 
 
-class _gCredentialsApiKey(gCredentials):
+class _gCredentialsApiKey(_gCredentials):
     _key: str
 
     def __init__(self, c: gCredentials, key: str):
-        super().__init__(c._scopes)
+        super().__init__(c)
         self._key = key
 
     def getStoredKey(self) -> str | None:
         return self._key
 
 
-class _gCredentialsFile(gCredentials):
+class _gCredentialsFile(_gCredentials):
     _credentials_path: str
     _credentials: Credentials
 
@@ -110,7 +115,7 @@ class _gCredentialsFile(gCredentials):
         get_credentials: Callable[[Any, Sequence[str]], Credentials],
         credentials_path: str,
     ):
-        super().__init__(c._scopes)
+        super().__init__(c)
         self._credentials_path = credentials_path
         with self._open_file("r") as file:
             self._credentials = get_credentials(json.load(file), c._scopes)
@@ -125,7 +130,7 @@ class _gCredentialsFile(gCredentials):
 _RefreshCredentials = OAuth2Credentials
 
 
-class _gCredentialsRefresh(gCredentials):
+class _gCredentialsRefresh(_gCredentials):
     _credentials_path: str
     _token_path: str
     _stored_credentials: OAuth2Credentials | None
@@ -137,7 +142,7 @@ class _gCredentialsRefresh(gCredentials):
         credentials_path: str,
         token_path: str,
     ):
-        super().__init__(c._scopes)
+        super().__init__(c)
         self._credentials_path = credentials_path
         self._token_path = token_path
         self._stored_credentials = self._try_load(get_credentials)
