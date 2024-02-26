@@ -12,7 +12,7 @@ See the [docs folder](docs/README.md) for detailed instructions and additional d
 
 ## Unsupported Python Versions
 
-Python < 3.10
+Python < 3.11
 
 ## Contributing
 

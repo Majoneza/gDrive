@@ -35,8 +35,8 @@ class gDataclass(metaclass=gDataclassMetaclass):
                 result[k] = v()
         return cls(**result)
 
-    def getFields(self, *fields: Any) -> Self:
-        raise NotImplementedError()
+    @abstractmethod
+    def getFields(self, *fields: Any) -> Self: ...
 
     def __init__(self, *args: Tuple[Any, Any] | Any, **kwargs: Any) -> None:
         super().__init__()
@@ -79,9 +79,9 @@ K = TypeVar("K", str, int)
 V = TypeVar("V", bound=gDataclass)
 
 
-class gList(gDataclass, Generic[T]):
+class gList(Generic[T]):
     @abstractmethod
-    def __contains__(self, obj: object) -> bool: ...
+    def __contains__(self, obj: T) -> bool: ...
 
     @abstractmethod
     def __len__(self) -> int: ...
@@ -89,10 +89,13 @@ class gList(gDataclass, Generic[T]):
     @abstractmethod
     def __getitem__(self, index: int) -> T: ...
 
-
-class gDict(gDataclass, Generic[K, V]):
     @abstractmethod
-    def __contains__(self, key: object) -> bool: ...
+    def getFields(self, *fields: Any) -> Self: ...
+
+
+class gDict(Generic[K, V]):
+    @abstractmethod
+    def __contains__(self, key: K) -> bool: ...
 
     @abstractmethod
     def __len__(self) -> int: ...
@@ -106,13 +109,11 @@ class gDict(gDataclass, Generic[K, V]):
     @abstractmethod
     def values(self) -> list[V]: ...
 
-    def get(self, key: K, default: V) -> V:
-        if key not in self:
-            return default
-        return self[key]
+    @abstractmethod
+    def items(self) -> list[tuple[K, V]]: ...
 
-    def items(self) -> list[tuple[K, V]]:
-        return list(zip(self.keys(), self.values()))
+    @abstractmethod
+    def getFields(self, *fields: Any) -> Self: ...
 
 
 FieldDictStr = dict[str, Union["FieldsDict", None]]
@@ -132,32 +133,6 @@ class gBaseData(Generic[T]):
         super().__init__()
         self._variableName = variableName
         self._variableClass = variableClass
-        self._setupVariables()
-
-    def _setupVariables(self) -> None:
-        for k, v in self._getVariableItemTypes().items():
-            origin = get_origin(v)
-            if origin is not None:
-                if origin is gList:
-                    itemType = get_args(v)[0]
-                    if not issubclass(itemType, gDataclass):
-                        continue
-                    data = gListData(k, itemType, self)
-                    setattr(self, k, data)
-                elif origin is gDict:
-                    valueType = get_args(v)[1]
-                    if not issubclass(valueType, gDataclass):
-                        continue
-                    data = cast(
-                        gDictData[Any, gDataclass], gDictData(k, valueType, self)
-                    )
-                    setattr(self, k, data)
-                elif issubclass(origin, gDataclass):
-                    objdata = gObjectData(k, v, self)
-                    setattr(self, k, objdata)
-            elif issubclass(v, gDataclass):
-                objdata = gObjectData(k, v, self)
-                setattr(self, k, objdata)
 
     def _getVariableItemTypes(self) -> dict[str, Any]:
         return self._variableClass.__annotations__
@@ -178,7 +153,7 @@ class gBaseData(Generic[T]):
                 return cast(gBaseData[Any], variable)
         return None
 
-    def _processFields(self, fields: Tuple[Any, ...]) -> gDataclass:
+    def _createDataclassFromFields(self, fields: Tuple[Any, ...]) -> gDataclass:
         if len(fields) == 0:
             return self._variableClass.allFields()
         return self._variableClass(*fields)
@@ -206,6 +181,10 @@ class gBaseData(Generic[T]):
 
 
 class gBaseObjectData(Generic[T], gBaseData[T], gDataclass):
+    def __init__(self, variableName: str, variableClass: type[T]) -> None:
+        super().__init__(variableName, variableClass)
+        self._setupVariables()
+
     def __repr__(self) -> str:
         return (
             self._variableClass.__qualname__
@@ -228,6 +207,31 @@ class gBaseObjectData(Generic[T], gBaseData[T], gDataclass):
             raise RuntimeError(f"Unable to fetch requested resource: {name}")
         return self._getAttributeUnchecked(name)
 
+    def _setupVariables(self) -> None:
+        for k, v in self._getVariableItemTypes().items():
+            origin = get_origin(v)
+            if origin is not None:
+                if origin is gList:
+                    itemType = get_args(v)[0]
+                    if not issubclass(itemType, gDataclass):
+                        continue
+                    data = gListData(k, itemType, self)
+                    setattr(self, k, data)
+                elif origin is gDict:
+                    valueType = get_args(v)[1]
+                    if not issubclass(valueType, gDataclass):
+                        continue
+                    data = cast(
+                        gDictData[Any, gDataclass], gDictData(k, valueType, self)
+                    )
+                    setattr(self, k, data)
+                elif issubclass(origin, gDataclass):
+                    objdata = gObjectData(k, v, self)
+                    setattr(self, k, objdata)
+            elif issubclass(v, gDataclass):
+                objdata = gObjectData(k, v, self)
+                setattr(self, k, objdata)
+
     def setData(self, data: Any) -> None:
         if type(data) is not dict:
             raise RuntimeError(
@@ -241,7 +245,7 @@ class gBaseObjectData(Generic[T], gBaseData[T], gDataclass):
             setattr(self, k, v)
 
     def getFields(self, *fields: Any) -> Self:
-        missingFields = self.getMissingFields(self._processFields(fields))
+        missingFields = self.getMissingFields(self._createDataclassFromFields(fields))
         if len(missingFields) > 0:
             self.getFieldsDict(missingFields)
         return self
@@ -264,7 +268,7 @@ class gDictItemData(Generic[K, V], gBaseObjectData[V]):
         variableName: str,
         variableClass: Type[V],
         previous: "gBaseDictData[K, V]",
-        key: K,
+        key: K | None,
     ) -> None:
         super().__init__(variableName, variableClass)
         self._previous = previous
@@ -276,7 +280,7 @@ class gDictItemData(Generic[K, V], gBaseObjectData[V]):
         self._previous.getFieldsDict(cast(FieldsDict, {self._key: fields}))
 
 
-class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
+class gBaseDictData(Generic[K, V], gBaseData[V]):
     @abstractmethod
     def _setData(self, data: Any) -> None: ...
 
@@ -284,27 +288,29 @@ class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
         self, valueName: str, valueClass: Type[V], previous: gBaseData[Any]
     ) -> None:
         super().__init__(valueName, valueClass)
+        self._dummy_item = gDictItemData(
+            self._variableName, self._variableClass, self, None
+        )
         self._items: dict[K, gDictItemData[K, V]] = {}
         self._previous = previous
         self._hasData = False
-
-    def __contains__(self, obj: object) -> bool:
-        if not isinstance(obj, self._variableClass):
-            return False
-        if not self._hasData:
-            self.getFields()
-        return obj in self._items.values()
 
     def __len__(self) -> int:
         if not self._hasData:
             self.getFieldsDict(None)
         return len(self._items)
 
-    def keys(self) -> list[K]:
-        return list(self._items.keys())
+    def __getitem__(self, key: K) -> gDictItemData[K, V]:
+        if self._hasData and key not in self._items:
+            raise IndexError()
+        return self._getItem(key)
 
-    def values(self) -> list[gDictItemData[K, V]]:
-        return list(self._items.values())
+    def _getItem(self, key: K) -> gDictItemData[K, V]:
+        if key not in self._items:
+            self._items[key] = gDictItemData(
+                self._variableName, self._variableClass, self, key
+            )
+        return self._items[key]
 
     def setData(self, data: Any) -> None:
         self._hasData = True
@@ -314,9 +320,7 @@ class gBaseDictData(Generic[K, V], gBaseData[V], gDict[K, gDictItemData[K, V]]):
         self._previous.getFieldsDict({self._variableName: fields})
 
     def getFields(self, *fields: Any) -> Self:
-        missingFields = self.getMissingFields(self._processFields(fields))
-        if len(missingFields) > 0:
-            self.getFieldsDict({None: missingFields})
+        self._dummy_item.getFields(*fields)
         return self
 
 
@@ -329,17 +333,10 @@ class gListData(Generic[T], gBaseDictData[int, T]):
             + "]"
         )
 
-    def __getitem__(self, index: int) -> gDictItemData[int, T]:
-        if self._hasData and index >= len(self):
-            raise IndexError()
-        return self._getItem(index)
-
-    def _getItem(self, index: int) -> gDictItemData[int, T]:
-        if index not in self._items:
-            self._items[index] = gDictItemData(
-                self._variableName, self._variableClass, self, index
-            )
-        return self._items[index]
+    def __contains__(self, obj: T) -> bool:
+        if not self._hasData:
+            self.getFieldsDict(None)
+        return obj in self._items.values()
 
     def _setData(self, data: Any) -> None:
         if type(data) is not list:
@@ -359,15 +356,10 @@ class gDictData(Generic[K, V], gBaseDictData[K, V]):
             + "}"
         )
 
-    def __getitem__(self, key: K) -> gDictItemData[K, V]:
-        return self._getItem(key)
-
-    def _getItem(self, key: K) -> gDictItemData[K, V]:
+    def __contains__(self, obj: K) -> bool:
         if not self._hasData:
             self.getFieldsDict(None)
-        if key not in self._items:
-            raise KeyError()
-        return self._items[key]
+        return obj in self._items
 
     def _setData(self, data: Any) -> None:
         if type(data) is not dict:
@@ -376,6 +368,19 @@ class gDictData(Generic[K, V], gBaseDictData[K, V]):
             )
         for k, v in cast(dict[Any, Any], data):
             self._getItem(k).setData(v)
+
+    def keys(self) -> list[K]:
+        if not self._hasData:
+            self.getFieldsDict(None)
+        return list(self._items.keys())
+
+    def values(self) -> list[gDictItemData[K, V]]:
+        if not self._hasData:
+            self.getFieldsDict(None)
+        return list(self._items.values())
+
+    def items(self) -> list[tuple[K, gDictItemData[K, V]]]:
+        return list(zip(self.keys(), self.values()))
 
 
 class gData(Generic[T], gBaseObjectData[T]):

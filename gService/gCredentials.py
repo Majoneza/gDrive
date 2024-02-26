@@ -31,7 +31,7 @@ class gCredentials:
 
     def default(self) -> tuple[gCredentials, Optional[str]]:
         credentials, project_id = google.auth.default(scopes=self._scopes)
-        return _gCredentials(self, cast(Any, credentials)), cast(Any, project_id)
+        return _gCredentialsCredentials(self, cast(Any, credentials)), cast(Any, project_id)
 
     def credentials(self, credentials: Credentials) -> gCredentials:
         return _gCredentialsCredentials(self, credentials)

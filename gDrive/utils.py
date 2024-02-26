@@ -3,6 +3,7 @@ import os
 FolderMimeType = "application/vnd.google-apps.folder"
 
 def splitPath(path: str) -> list[str]:
+    path = path.lstrip("/")
     return os.path.normpath(path).split(os.sep)
 
 def processDrivePath(path: str) -> tuple[str, list[str]]:

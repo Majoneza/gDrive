@@ -260,7 +260,7 @@ class gDriveFiles(gResourceManager):
         for key, value in tree.items():
             path = os.path.join(localFolderPath, key[1])
             if value is None:
-                result.append((key[1], self.DownloadId(key[0], path)))
+                result.append((path, self.DownloadId(key[0], path)))
             else:
                 os.mkdir(path)
                 result.extend(self._DownloadTree(value, path))

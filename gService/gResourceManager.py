@@ -14,7 +14,7 @@ from .utils import (
     getFunctionVariables,
     getOverloadedFunctionReturnTypeAndVariables,
 )
-from typing import Any, cast, Dict, Literal, Generator, Self
+from typing import Any, cast, Dict, Literal, Generator, overload, Self
 from types import TracebackType
 
 
@@ -64,12 +64,28 @@ class gResourceManager:
         name = getFunctionName(depth + 1)
         return getattr(self._resource, name + suffix)
 
+    @overload
+    def _getResource(
+        self,
+        executionPolicy: Literal["execute", "executeOnlyOnce"],
+        body: str | None = None,
+        depth: int = 1,
+    ) -> Any: ...
+
+    @overload
+    def _getResource(
+        self,
+        executionPolicy: Literal["checkForErrors"],
+        body: str | None = None,
+        depth: int = 1,
+    ) -> None: ...
+
     def _getResource(
         self,
         executionPolicy: Literal["execute", "executeOnlyOnce", "checkForErrors"],
         body: str | None = None,
         depth: int = 1,
-    ) -> Any:
+    ) -> Any | None:
         variableClass, kwargs = getOverloadedFunctionReturnTypeAndVariables(
             self, depth + 1
         )
